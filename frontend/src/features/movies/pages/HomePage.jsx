@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import HeroSection from '@/features/movies/components/HeroSection';
 import MovieSlider from '@/features/movies/components/MovieSlider';
+import TopMoviesSection from '@/features/movies/components/TopMoviesSection';
 import { movieService } from '@/features/movies/services/movieService';
 import { Link } from 'react-router-dom';
 import { Sparkles, Compass, Flame, Star, PlayCircle, Library, Heart } from 'lucide-react';
-import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 export default function HomePage() {
     const [latestMovies, setLatestMovies] = useState([]);
     const [heroMovies, setHeroMovies] = useState([]);
+    const [topMoviesWeek, setTopMoviesWeek] = useState([]);
     const [phimLe, setPhimLe] = useState([]);
     const [phimBo, setPhimBo] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -18,27 +19,48 @@ export default function HomePage() {
             try {
                 setLoading(true);
                 // Execute parallel requests for performance
-                const [latestRes, phimLeRes, phimBoRes] = await Promise.all([
+                const [latestRes, phimLeRes, phimBoRes, heroSetting, topWeekSetting] = await Promise.all([
                     movieService.getLatestMovies(1),
                     movieService.getMoviesByType('phim-le', 1),
-                    movieService.getMoviesByType('phim-bo', 1)
+                    movieService.getMoviesByType('phim-bo', 1),
+                    movieService.getSetting('HeroMovies'),
+                    movieService.getSetting('TopMoviesWeek')
                 ]);
 
-                if (latestRes.status) {
-                    const basicMovies = latestRes.items || [];
-                    setLatestMovies(basicMovies);
-
-                    // Fetch rich details for the top 5 hero banner movies
-                    const top5Slugs = basicMovies.slice(0, 5).map(m => m.slug);
-                    const heroDetailsPromises = top5Slugs.map(slug => movieService.getMovieDetail(slug));
+                // Handle Hero Movies
+                if (heroSetting && Array.isArray(heroSetting) && heroSetting.length > 0) {
+                    // Fetch full details for movies from settings to get 'content' (description)
+                    const heroSlugs = heroSetting.map(m => m.slug);
+                    const heroDetailsPromises = heroSlugs.map(slug => movieService.getMovieDetail(slug));
                     const heroDetailsRes = await Promise.all(heroDetailsPromises);
-
                     const richHeroMovies = heroDetailsRes
                         .filter(res => res.status && res.movie)
                         .map(res => res.movie);
-
+                    setHeroMovies(richHeroMovies.length > 0 ? richHeroMovies : heroSetting);
+                } else if (latestRes.status) {
+                    const basicMovies = latestRes.items || [];
+                    const top5Slugs = basicMovies.slice(0, 5).map(m => m.slug);
+                    const heroDetailsPromises = top5Slugs.map(slug => movieService.getMovieDetail(slug));
+                    const heroDetailsRes = await Promise.all(heroDetailsPromises);
+                    const richHeroMovies = heroDetailsRes
+                        .filter(res => res.status && res.movie)
+                        .map(res => res.movie);
                     setHeroMovies(richHeroMovies.length > 0 ? richHeroMovies : basicMovies.slice(0, 5));
                 }
+
+                // Handle Top Week
+                if (topWeekSetting && Array.isArray(topWeekSetting)) {
+                    // Fetch full details for movies from settings to get origin_name, status, etc.
+                    const topSlugs = topWeekSetting.map(m => m.slug);
+                    const topDetailsPromises = topSlugs.map(slug => movieService.getMovieDetail(slug));
+                    const topDetailsRes = await Promise.all(topDetailsPromises);
+                    const richTopMovies = topDetailsRes
+                        .filter(res => res.status && res.movie)
+                        .map(res => res.movie);
+                    setTopMoviesWeek(richTopMovies.length > 0 ? richTopMovies : topWeekSetting);
+                }
+
+                if (latestRes.status) setLatestMovies(latestRes.items || []);
                 if (phimLeRes.status) setPhimLe(phimLeRes.data?.items || []);
                 if (phimBoRes.status) setPhimBo(phimBoRes.data?.items || []);
             } catch (error) {
@@ -115,6 +137,9 @@ export default function HomePage() {
                         })}
                     </div>
                 </div>
+
+                {/* Phim Top Tuần - New Independent Frame */}
+                <TopMoviesSection movies={topMoviesWeek} />
 
                 {/* Unified Movie Sliders Container */}
                 <div className="flex flex-col gap-0 bg-[#0f1015]/90 backdrop-blur-xl border border-white/5 rounded-[2rem] p-4 lg:p-8 shadow-2xl overflow-hidden relative">

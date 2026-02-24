@@ -39,4 +39,9 @@ public class WatchHistoryRepository : IWatchHistoryRepository
         _context.WatchHistories.Update(history);
         await _context.SaveChangesAsync();
     }
+
+    public async Task<IEnumerable<WatchHistory>> GetAllAsync()
+    {
+        return await _context.WatchHistories.ToListAsync();
+    }
 }

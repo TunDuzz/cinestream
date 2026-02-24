@@ -60,6 +60,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Repositories.IUserRepository, Cinestream.Infrastructure.Repositories.UserRepository>();
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Repositories.IFavoriteRepository, Cinestream.Infrastructure.Repositories.FavoriteRepository>();
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Repositories.IWatchHistoryRepository, Cinestream.Infrastructure.Repositories.WatchHistoryRepository>();
+builder.Services.AddScoped<Cinestream.Application.Interfaces.Repositories.IAppSettingRepository, Cinestream.Infrastructure.Repositories.AppSettingRepository>();
 
 // Common / Utilities
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Common.IJwtTokenGenerator, Cinestream.Infrastructure.Common.JwtTokenGenerator>();

@@ -39,4 +39,9 @@ public class FavoriteRepository : IFavoriteRepository
         _context.Favorites.Remove(favorite);
         await _context.SaveChangesAsync();
     }
+
+    public async Task<IEnumerable<Favorite>> GetAllAsync()
+    {
+        return await _context.Favorites.ToListAsync();
+    }
 }

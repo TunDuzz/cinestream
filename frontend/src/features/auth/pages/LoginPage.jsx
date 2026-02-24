@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { PlayCircle, Mail, Lock, Loader2 } from 'lucide-react';
 import { authService } from '../services/authService';
 import useAuthStore from '@/store/useAuthStore';
+import { jwtDecode } from 'jwt-decode';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -26,7 +27,15 @@ export default function LoginPage() {
                 avatarUrl: data.avatarUrl
             };
             login(userState, data.token, data.refreshToken);
-            navigate('/');
+
+            // Handle redirection based on role
+            const decoded = jwtDecode(data.token);
+            const role = decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+            if (role === 'Admin') {
+                navigate('/admin');
+            } else {
+                navigate('/');
+            }
         } catch (err) {
             const data = err.response?.data;
             let errMsg = data?.message || data?.title || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email hoặc mật khẩu.';

@@ -1,3 +1,5 @@
+using Cinestream.Domain.Enums;
+
 namespace Cinestream.Domain.Entities;
 
 public class User
@@ -11,6 +13,7 @@ public class User
     public DateTime? RefreshTokenExpiry { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public UserRole Role { get; set; } = UserRole.User;
 
     public ICollection<WatchHistory> WatchHistories { get; set; } = new List<WatchHistory>();
     public ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();

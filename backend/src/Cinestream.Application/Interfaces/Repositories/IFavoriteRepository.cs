@@ -8,4 +8,5 @@ public interface IFavoriteRepository
     Task<IEnumerable<Favorite>> GetUserFavoritesAsync(Guid userId);
     Task AddAsync(Favorite favorite);
     Task RemoveAsync(Favorite favorite);
+    Task<IEnumerable<Favorite>> GetAllAsync();
 }

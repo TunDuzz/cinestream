@@ -152,6 +152,9 @@ export default function WatchPage() {
                                             key={currentEpisode.link_m3u8}
                                             videoUrl={currentEpisode.link_m3u8}
                                             movieId={movie.Id || movie._id}
+                                            movieName={movie.name}
+                                            movieSlug={movie.slug}
+                                            movieThumbUrl={movie.thumb_url}
                                             episode={currentEpisode.name}
                                             autoPlay={true}
                                         />

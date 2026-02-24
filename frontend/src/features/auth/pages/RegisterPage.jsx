@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PlayCircle, Mail, Lock, User, Loader2 } from 'lucide-react';
 import { authService } from '../services/authService';
+import useAuthStore from '@/store/useAuthStore';
+import { jwtDecode } from 'jwt-decode';
 
 export default function RegisterPage() {
     const [displayName, setDisplayName] = useState('');
@@ -13,6 +15,7 @@ export default function RegisterPage() {
     const [success, setSuccess] = useState('');
 
     const navigate = useNavigate();
+    const { login } = useAuthStore();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -27,11 +30,28 @@ export default function RegisterPage() {
         setLoading(true);
 
         try {
-            await authService.register(email, password, displayName);
-            setSuccess('Đăng ký thành công! Đang chuyển hướng đến trang đăng nhập...');
+            const data = await authService.register(email, password, displayName);
+            const userState = {
+                email: data.email,
+                displayName: data.displayName,
+                avatarUrl: data.avatarUrl
+            };
+
+            // Auto-login using the token from registration
+            login(userState, data.token, data.refreshToken);
+
+            // Handle redirection based on role
+            const decoded = jwtDecode(data.token);
+            const role = decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+
+            setSuccess('Đăng ký thành công! Đang chuyển hướng...');
             setTimeout(() => {
-                navigate('/login');
-            }, 2000);
+                if (role === 'Admin') {
+                    navigate('/admin');
+                } else {
+                    navigate('/');
+                }
+            }, 1500);
         } catch (err) {
             const data = err.response?.data;
             let errMsg = data?.message || data?.title || 'Đăng ký thất bại. Vui lòng thử lại.';

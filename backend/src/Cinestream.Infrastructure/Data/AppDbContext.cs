@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
 
     public DbSet<WatchHistory> WatchHistories { get; set; }
     public DbSet<Favorite> Favorites { get; set; }
+    public DbSet<AppSetting> AppSettings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

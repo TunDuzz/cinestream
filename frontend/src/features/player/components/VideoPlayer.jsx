@@ -10,7 +10,7 @@ import {
     PictureInPicture2, Gauge
 } from 'lucide-react';
 
-const VideoPlayer = ({ videoUrl, movieId, episode, initialTime = 0, autoPlay = true }) => {
+const VideoPlayer = ({ videoUrl, movieId, movieName, movieSlug, movieThumbUrl, episode, initialTime = 0, autoPlay = true }) => {
     const videoRef = useRef(null);
     const playerContainerRef = useRef(null);
     const playerRef = useRef(null);
@@ -117,6 +117,9 @@ const VideoPlayer = ({ videoUrl, movieId, episode, initialTime = 0, autoPlay = t
         try {
             await axiosClient.post('/watch-history', {
                 movieId,
+                movieName,
+                movieSlug,
+                movieThumbUrl,
                 episode,
                 watchedTimeInSeconds: Math.floor(time),
                 isCompleted
@@ -215,7 +218,7 @@ const VideoPlayer = ({ videoUrl, movieId, episode, initialTime = 0, autoPlay = t
                 playerRef.current = null;
             }
         };
-    }, [videoUrl, movieId, episode, initialTime]);
+    }, [videoUrl, movieId, movieName, movieSlug, movieThumbUrl, episode, initialTime]);
 
     const togglePlay = () => {
         if (playerRef.current.paused()) {

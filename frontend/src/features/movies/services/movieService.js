@@ -51,4 +51,13 @@ export const movieService = {
     getCountries: async () => {
         return await axiosClient.get('/Movies/countries');
     },
+
+    getSetting: async (key) => {
+        try {
+            return await axiosClient.get(`/Settings/${key}`);
+        } catch (error) {
+            console.error(`Error fetching setting ${key}:`, error);
+            return null;
+        }
+    },
 };

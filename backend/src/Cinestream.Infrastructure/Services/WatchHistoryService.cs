@@ -24,6 +24,9 @@ public class WatchHistoryService : IWatchHistoryService
             {
                 UserId = userId,
                 MovieId = dto.MovieId,
+                MovieName = dto.MovieName,
+                MovieSlug = dto.MovieSlug,
+                MovieThumbUrl = dto.MovieThumbUrl,
                 Episode = dto.Episode,
                 WatchedTimeInSeconds = dto.WatchedTimeInSeconds,
                 IsCompleted = dto.IsCompleted,
@@ -33,6 +36,9 @@ public class WatchHistoryService : IWatchHistoryService
         }
         else
         {
+            history.MovieName = dto.MovieName;
+            history.MovieSlug = dto.MovieSlug;
+            history.MovieThumbUrl = dto.MovieThumbUrl;
             history.WatchedTimeInSeconds = dto.WatchedTimeInSeconds;
             history.IsCompleted = dto.IsCompleted;
             history.LastWatchedAt = DateTime.UtcNow;
@@ -46,6 +52,9 @@ public class WatchHistoryService : IWatchHistoryService
         return histories.Select(w => new WatchHistoryDto
         {
             MovieId = w.MovieId,
+            MovieName = w.MovieName,
+            MovieSlug = w.MovieSlug,
+            MovieThumbUrl = w.MovieThumbUrl,
             Episode = w.Episode,
             WatchedTimeInSeconds = w.WatchedTimeInSeconds,
             IsCompleted = w.IsCompleted

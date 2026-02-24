@@ -8,4 +8,5 @@ public interface IWatchHistoryRepository
     Task<IEnumerable<WatchHistory>> GetUserHistoryAsync(Guid userId);
     Task AddAsync(WatchHistory history);
     Task UpdateAsync(WatchHistory history);
+    Task<IEnumerable<WatchHistory>> GetAllAsync();
 }

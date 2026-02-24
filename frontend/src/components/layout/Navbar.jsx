@@ -1,12 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { User, PlayCircle, Bell, LogOut, ChevronDown } from 'lucide-react';
+import { User, PlayCircle, Bell, LogOut, ChevronDown, Shield } from 'lucide-react';
 import useAuthStore from '@/store/useAuthStore';
 import { useState, useEffect } from 'react';
 import NavbarSearch from './NavbarSearch';
 import { movieService } from '@/features/movies/services/movieService';
 
 export default function Navbar() {
-    const { isAuthenticated, user, logout } = useAuthStore();
+    const { isAuthenticated, user, logout, isAdmin } = useAuthStore();
     const [showDropdown, setShowDropdown] = useState(false);
     const [categories, setCategories] = useState([]);
     const [countries, setCountries] = useState([]);

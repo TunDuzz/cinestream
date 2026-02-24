@@ -1,5 +1,6 @@
 import { Play, Heart, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import useAuthStore from '@/store/useAuthStore';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectFade, Autoplay, Pagination } from 'swiper/modules';
 
@@ -9,6 +10,7 @@ import 'swiper/css/pagination';
 import './HeroSection.css'; // We'll add custom pagination styles here
 
 export default function HeroSection({ movies = [] }) {
+    const { isAdmin } = useAuthStore();
     if (!movies || movies.length === 0) {
         // Return a sleek loading skeleton while waiting for API data
         return <div className="w-full h-screen min-h-[800px] bg-black/40 animate-pulse"></div>;
@@ -28,13 +30,62 @@ export default function HeroSection({ movies = [] }) {
             posterUrl: getImageUrl(movie.poster_url),
             thumbUrl: getImageUrl(movie.thumb_url),
             year: movie.year,
-            quality: movie.quality,
+            quality: movie.quality || 'HD',
             episodeTotal: movie.episode_total,
             episodeCurrent: movie.episode_current,
+            time: movie.time,
+            type: movie.type,
+            tmdbVote: movie.tmdb?.vote_average || "0.0",
             categories: movie.category?.map(c => c.name) || [],
             content: movie.content ? movie.content.replace(/<[^>]*>?/gm, '') : ""
         };
     });
+
+    const renderBadges = (movie) => {
+        const badges = [];
+
+        // 1. IMDb Score
+        badges.push(
+            <span key="imdb" className="flex items-center gap-1 border border-primary-yellow text-primary-yellow px-2 py-0.5 rounded">
+                <span className="bg-primary-yellow text-black px-1 rounded-sm font-black mr-1 text-[8px] md:text-[10px]">IMDB</span> {movie.tmdbVote}
+            </span>
+        );
+
+        // 2. Year
+        if (movie.year) {
+            badges.push(<span key="year" className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded border border-white/5">{movie.year}</span>);
+        }
+
+        // 3. Phim Lẻ vs Phim Bộ logic
+        if (movie.type === 'single') {
+            // Phim Lẻ: Show Duration, remove ep count
+            if (movie.time) {
+                badges.push(<span key="time" className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded border border-white/5">{movie.time}</span>);
+            }
+        } else {
+            // Phim Bộ: Parts & Episodes
+            // Default "Phần 1" if it's a series
+            badges.push(<span key="part" className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded border border-white/5">Phần 1</span>);
+
+            // Episode status
+            let epText = movie.episodeCurrent || "";
+            const isCompleted = epText.toLowerCase().includes('full') || epText.toLowerCase().includes('hoàn tất');
+
+            if (isCompleted) {
+                const total = movie.episodeTotal || "?";
+                const currentNum = epText.match(/\d+/) ? epText.match(/\d+/)[0] : total;
+                badges.push(<span key="ep" className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded border border-white/5">Tập Hoàn tất ({currentNum}/{total})</span>);
+            } else {
+                badges.push(<span key="ep" className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded border border-white/5">{epText}</span>);
+            }
+        }
+
+        return (
+            <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] md:text-xs font-semibold uppercase tracking-wider">
+                {badges}
+            </div>
+        );
+    };
 
     return (
         <div className="relative w-full h-[100svh] md:h-[85vh] min-h-[700px] bg-dark-bg">
@@ -92,15 +143,7 @@ export default function HeroSection({ movies = [] }) {
                                     </h2>
 
                                     {/* Badges Row */}
-                                    <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] md:text-xs font-semibold uppercase tracking-wider">
-                                        <span className="flex items-center gap-1 border border-primary-yellow text-primary-yellow px-2 py-0.5 rounded">
-                                            <span className="bg-primary-yellow text-black px-1 rounded-sm font-black mr-1">IMDb</span> 7.0
-                                        </span>
-                                        {displayMovie.quality && <span className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded border border-white/5">{displayMovie.quality}</span>}
-                                        {displayMovie.year && <span className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded border border-white/5">{displayMovie.year}</span>}
-                                        {displayMovie.episodeCurrent && <span className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded border border-white/5">{displayMovie.episodeCurrent}</span>}
-                                        {displayMovie.episodeTotal && <span className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded border border-white/5">{displayMovie.episodeTotal}</span>}
-                                    </div>
+                                    {renderBadges(displayMovie)}
 
                                     {/* Categories Row - Fixed Height to prevent jump */}
                                     <div className="min-h-[28px] md:min-h-[32px] mt-1">
@@ -124,12 +167,14 @@ export default function HeroSection({ movies = [] }) {
 
                                     {/* Action Buttons */}
                                     <div className="flex items-center gap-4 mt-8">
-                                        <Link
-                                            to={`/watch/${displayMovie.id}`}
-                                            className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-full bg-primary-yellow text-black hover:scale-105 hover:bg-primary-yellow-hover transition-all shadow-[0_0_30px_rgba(252,213,63,0.3)]"
-                                        >
-                                            <Play fill="currentColor" size={24} className="ml-1" />
-                                        </Link>
+                                        {!isAdmin && (
+                                            <Link
+                                                to={`/watch/${displayMovie.id}`}
+                                                className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-full bg-primary-yellow text-black hover:scale-105 hover:bg-primary-yellow-hover transition-all shadow-[0_0_30px_rgba(252,213,63,0.3)]"
+                                            >
+                                                <Play fill="currentColor" size={24} className="ml-1" />
+                                            </Link>
+                                        )}
 
                                         <button className="flex items-center justify-center w-12 h-12 rounded-full glass-panel hover:bg-white/10 transition-colors text-white">
                                             <Heart size={20} />

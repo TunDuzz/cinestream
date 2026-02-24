@@ -22,6 +22,23 @@ namespace Cinestream.Infrastructure.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("Cinestream.Domain.Entities.AppSetting", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("AppSettings");
+                });
+
             modelBuilder.Entity("Cinestream.Domain.Entities.Favorite", b =>
                 {
                     b.Property<int>("Id")
@@ -78,6 +95,9 @@ namespace Cinestream.Infrastructure.Migrations
                     b.Property<string>("RefreshTokenHash")
                         .HasColumnType("longtext");
 
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -104,6 +124,18 @@ namespace Cinestream.Infrastructure.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("MovieId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("MovieName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("MovieSlug")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("MovieThumbUrl")
                         .IsRequired()
                         .HasColumnType("longtext");
 
