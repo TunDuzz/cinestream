@@ -16,7 +16,11 @@ public class WatchHistoryService : IWatchHistoryService
 
     public async Task SaveProgressAsync(Guid userId, WatchHistoryDto dto)
     {
-        var history = await _watchHistoryRepository.GetByUserIdAndEpisodeAsync(userId, dto.MovieId, dto.Episode);
+        var normalizedEpisode = string.IsNullOrWhiteSpace(dto.Episode)
+            ? null
+            : dto.Episode.Trim().TrimEnd('.');
+
+        var history = await _watchHistoryRepository.GetByUserIdAndEpisodeAsync(userId, dto.MovieSlug, normalizedEpisode);
 
         if (history == null)
         {
@@ -27,7 +31,7 @@ public class WatchHistoryService : IWatchHistoryService
                 MovieName = dto.MovieName,
                 MovieSlug = dto.MovieSlug,
                 MovieThumbUrl = dto.MovieThumbUrl,
-                Episode = dto.Episode,
+                Episode = normalizedEpisode,
                 WatchedTimeInSeconds = dto.WatchedTimeInSeconds,
                 IsCompleted = dto.IsCompleted,
                 LastWatchedAt = DateTime.UtcNow
@@ -39,9 +43,16 @@ public class WatchHistoryService : IWatchHistoryService
             history.MovieName = dto.MovieName;
             history.MovieSlug = dto.MovieSlug;
             history.MovieThumbUrl = dto.MovieThumbUrl;
+            history.Episode = normalizedEpisode;
             history.WatchedTimeInSeconds = dto.WatchedTimeInSeconds;
-            history.IsCompleted = dto.IsCompleted;
-            history.LastWatchedAt = DateTime.UtcNow;
+
+            history.IsCompleted = history.IsCompleted || dto.IsCompleted;
+
+            if (dto.WatchedTimeInSeconds > 0)
+            {
+                history.LastWatchedAt = DateTime.UtcNow;
+            }
+
             await _watchHistoryRepository.UpdateAsync(history);
         }
     }
@@ -57,7 +68,24 @@ public class WatchHistoryService : IWatchHistoryService
             MovieThumbUrl = w.MovieThumbUrl,
             Episode = w.Episode,
             WatchedTimeInSeconds = w.WatchedTimeInSeconds,
-            IsCompleted = w.IsCompleted
+            IsCompleted = w.IsCompleted,
+            LastWatchedAt = w.LastWatchedAt
+        });
+    }
+
+    public async Task<IEnumerable<WatchHistoryDto>> GetMovieHistoryAsync(Guid userId, string movieId)
+    {
+        var histories = await _watchHistoryRepository.GetByMovieIdAsync(userId, movieId);
+        return histories.Select(w => new WatchHistoryDto
+        {
+            MovieId = w.MovieId,
+            MovieName = w.MovieName,
+            MovieSlug = w.MovieSlug,
+            MovieThumbUrl = w.MovieThumbUrl,
+            Episode = w.Episode,
+            WatchedTimeInSeconds = w.WatchedTimeInSeconds,
+            IsCompleted = w.IsCompleted,
+            LastWatchedAt = w.LastWatchedAt
         });
     }
 }
