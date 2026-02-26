@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { movieService } from '@/features/movies/services/movieService';
 import VideoPlayer from '@/features/player/components/VideoPlayer';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import useAuthStore from '@/store/useAuthStore';
+import axiosClient from '@/utils/axiosClient';
 import {
     ChevronLeft,
     ChevronDown,
@@ -13,16 +15,19 @@ import {
     MessageCircle,
     Info,
     Star,
-    Calendar,
-    Clock,
     Tv,
     Layout,
     Users,
     Flag,
-    ArrowRight,
     ThumbsUp,
-    Bookmark
+    Bookmark,
+    Layers,
+    SkipBack,
+    SkipForward,
+    Trophy
 } from 'lucide-react';
+
+const EPISODES_PER_RANGE = 100;
 
 export default function WatchPage() {
     const { id } = useParams();
@@ -37,32 +42,119 @@ export default function WatchPage() {
     const [activeServerIndex, setActiveServerIndex] = useState(0);
     const [isEpisodesCollapsed, setIsEpisodesCollapsed] = useState(false);
     const [isSeasonDropdownOpen, setIsSeasonDropdownOpen] = useState(false);
+    const [selectedRangeIndex, setSelectedRangeIndex] = useState(0);
+
+    const { isAuthenticated } = useAuthStore();
+    const [initialTime, setInitialTime] = useState(0);
+    const [resumeLoading, setResumeLoading] = useState(false);
+
+    const handleEpisodeChange = (ep, time = 0) => {
+        setCurrentEpisode(ep);
+        setInitialTime(time);
+    };
+
+    const hasNextEpisode = () => {
+        const episodes = movieData?.movie?.episodes?.[activeServerIndex]?.server_data || [];
+        if (!currentEpisode || episodes.length === 0) return false;
+        const currentIndex = episodes.findIndex(ep => ep.link_m3u8 === currentEpisode.link_m3u8);
+        return currentIndex !== -1 && currentIndex < episodes.length - 1;
+    };
+
+    const hasPrevEpisode = () => {
+        const episodes = movieData?.movie?.episodes?.[activeServerIndex]?.server_data || [];
+        if (!currentEpisode || episodes.length === 0) return false;
+        const currentIndex = episodes.findIndex(ep => ep.link_m3u8 === currentEpisode.link_m3u8);
+        return currentIndex > 0;
+    };
+
+    const handleNextEpisode = () => {
+        const episodes = movieData?.movie?.episodes?.[activeServerIndex]?.server_data || [];
+        if (!currentEpisode || episodes.length === 0) return;
+        const currentIndex = episodes.findIndex(ep => ep.link_m3u8 === currentEpisode.link_m3u8);
+        if (currentIndex !== -1 && currentIndex < episodes.length - 1) {
+            handleEpisodeChange(episodes[currentIndex + 1], 0);
+        }
+    };
+
+    const handlePrevEpisode = () => {
+        const episodes = movieData?.movie?.episodes?.[activeServerIndex]?.server_data || [];
+        if (!currentEpisode || episodes.length === 0) return;
+        const currentIndex = episodes.findIndex(ep => ep.link_m3u8 === currentEpisode.link_m3u8);
+        if (currentIndex > 0) {
+            handleEpisodeChange(episodes[currentIndex - 1], 0);
+        }
+    };
 
     useEffect(() => {
         const fetchMovieDetail = async () => {
             try {
                 setLoading(true);
+                // Clear old movie data and episode to prevent stale content/old video playing
+                setMovieData(null);
+                setCurrentEpisode(null);
+                setInitialTime(0);
+                setRecommendations([]);
+                setRecommendations([]);
+
                 const response = await movieService.getMovieDetail(id);
                 if (response.status && response.movie) {
                     setMovieData(response);
 
-                    // Set default episode
-                    if (response.movie.episodes && response.movie.episodes.length > 0) {
-                        const firstServer = response.movie.episodes[0];
-                        if (firstServer.server_data && firstServer.server_data.length > 0) {
-                            setCurrentEpisode(firstServer.server_data[0]);
+                    // Fetch Recommendations by Category and Country in parallel
+                    const fetchExtraData = async () => {
+                        try {
+                            const requests = [];
+
+                            // 1. Get Recommendations by Category
+                            if (response.movie.category?.[0]) {
+                                requests.push(movieService.getMoviesByCategory(response.movie.category[0].slug));
+                            }
+
+                            // 2. Get Recommendations by Country
+                            if (response.movie.country?.[0]) {
+                                requests.push(movieService.getMoviesByCountry(response.movie.country[0].slug));
+                            }
+
+                            const results = await Promise.all(requests);
+
+                            let combinedData = [];
+                            results.forEach(res => {
+                                if (res?.items) {
+                                    combinedData = [...combinedData, ...res.items];
+                                } else if (res?.data?.items) {
+                                    combinedData = [...combinedData, ...res.data.items];
+                                }
+                            });
+
+                            // Remove duplicates and current movie
+                            const seenSlugs = new Set([id]);
+                            const filteredData = combinedData.filter(item => {
+                                if (seenSlugs.has(item.slug)) return false;
+                                seenSlugs.add(item.slug);
+                                return true;
+                            });
+
+                            setRecommendations(filteredData.slice(0, 15));
+                        } catch (err) {
+                            console.error("Error fetching extra movie data:", err);
                         }
+                    };
+
+                    fetchExtraData();
+
+                    let initialEp = null;
+                    const allEpisodes = response.movie.episodes?.[activeServerIndex]?.server_data || [];
+
+                    if (allEpisodes.length > 0) {
+                        // Skip items named 'Trailer' if possible
+                        const nonTrailerEps = allEpisodes.filter(ep =>
+                            !ep.name?.toString().toLowerCase().includes('trailer')
+                        );
+                        initialEp = nonTrailerEps.length > 0 ? nonTrailerEps[0] : allEpisodes[0];
                     }
 
-                    // Fetch recommendations (simulated or real from same category)
-                    if (response.movie.category?.[0]) {
-                        const recs = await movieService.getMoviesByCategory(response.movie.category[0].slug);
-                        setRecommendations(recs.items?.filter(item => item.slug !== id).slice(0, 8) || []);
-                    }
-
-                    // Fetch Related Seasons based on Base Name
                     const currentTitle = response.movie.name;
-                    const baseName = currentTitle.replace(/\s*(?:-\s*)?(?:Phần|Season|Mùa)\s*\d+.*$/i, '').trim();
+                    const baseName = currentTitle.replace(/\s*(?:-\s*)?(?:Part|Season|Mùa)\s*\d+.*$/i, '').trim();
                     try {
                         const searchResult = await movieService.searchMovies(baseName);
                         if (searchResult && searchResult.items && searchResult.items.length > 0) {
@@ -72,7 +164,7 @@ export default function WatchPage() {
 
                             seasons = seasons.sort((a, b) => {
                                 const getPart = (t) => {
-                                    const m = t.match(/(?:Phần|Season|Mùa)\s*(\d+)/i);
+                                    const m = t.match(/(?:Part|Season|Mùa)\s*(\d+)/i);
                                     return m ? parseInt(m[1]) : 0;
                                 };
                                 return getPart(a.name) - getPart(b.name);
@@ -82,8 +174,12 @@ export default function WatchPage() {
                         } else {
                             setRelatedSeasons([{ ...response.movie, isCurrent: true }]);
                         }
+
+                        if (initialEp && !isAuthenticated) {
+                            setCurrentEpisode(initialEp);
+                            setInitialTime(0);
+                        }
                     } catch (err) {
-                        console.error('Error fetching related seasons', err);
                         setRelatedSeasons([{ ...response.movie, isCurrent: true }]);
                     }
                 }
@@ -99,6 +195,106 @@ export default function WatchPage() {
             window.scrollTo(0, 0);
         }
     }, [id]);
+
+    // Handle Resume Playback
+    useEffect(() => {
+        const resumePlayback = async () => {
+            if (!isAuthenticated || !movieData?.movie) return;
+
+            const movie = movieData.movie;
+            const allEpisodes = movie.episodes?.[activeServerIndex]?.server_data || [];
+            const fallbackEp = allEpisodes[0] || null;
+
+            let timeoutId = null;
+            try {
+                setResumeLoading(true);
+                timeoutId = setTimeout(() => setResumeLoading(false), 6000);
+
+                const historyRes = await axiosClient.get(`/watch-history/${movie.slug}`);
+                const histories = Array.isArray(historyRes) ? historyRes : (historyRes?.data || []);
+
+                if (!histories.length) {
+                    if (fallbackEp) {
+                        handleEpisodeChange(fallbackEp, 0);
+                    }
+                    return;
+                }
+
+                const normalized = histories.map(h => {
+                    const episodeRaw = h.episode ?? h.Episode ?? null;
+                    const watchedTimeInSeconds = h.watchedTimeInSeconds ?? h.WatchedTimeInSeconds ?? 0;
+                    const lastWatchedAt = h.lastWatchedAt ?? h.LastWatchedAt ?? null;
+                    const episodeStr = episodeRaw ? episodeRaw.toString().replace(/\.$/, '').trim() : null;
+                    return {
+                        episode: episodeStr,
+                        watchedTimeInSeconds,
+                        lastWatchedAt
+                    };
+                });
+
+                let latest = null;
+                if (normalized.length > 0) {
+                    latest = normalized.reduce((best, cur) => {
+                        if (!best) return cur;
+                        const bestTime = new Date(best.lastWatchedAt || 0).getTime();
+                        const curTime = new Date(cur.lastWatchedAt || 0).getTime();
+                        return curTime > bestTime ? cur : best;
+                    }, null);
+                }
+
+                const savedEpName = latest?.episode || null;
+
+                let savedEp = null;
+                if (savedEpName) {
+                    const targetNum = parseInt(savedEpName.replace(/\D/g, ''), 10);
+
+                    savedEp = allEpisodes.find(ep => {
+                        const rawName = ep.name?.toString() || '';
+                        const cleaned = rawName.replace(/\.$/, '').trim();
+
+                        if (cleaned === savedEpName) return true;
+
+                        const cleanedNum = parseInt(cleaned.replace(/\D/g, ''), 10);
+                        if (Number.isNaN(targetNum) || Number.isNaN(cleanedNum)) return false;
+
+                        return cleanedNum === targetNum;
+                    });
+                }
+
+                if (savedEp) {
+                    handleEpisodeChange(savedEp, latest.watchedTimeInSeconds || 0);
+
+                    const currentIndex = allEpisodes.findIndex(ep => ep.link_m3u8 === savedEp.link_m3u8);
+                    if (currentIndex !== -1) {
+                        setSelectedRangeIndex(Math.floor(currentIndex / EPISODES_PER_RANGE));
+                    }
+                } else if (fallbackEp) {
+                    handleEpisodeChange(fallbackEp, 0);
+                }
+            } catch (hErr) {
+                console.error("Error fetching watch history", hErr);
+                if (fallbackEp) handleEpisodeChange(fallbackEp, 0);
+            } finally {
+                if (timeoutId) clearTimeout(timeoutId);
+                setResumeLoading(false);
+            }
+        };
+
+        resumePlayback();
+    }, [isAuthenticated, movieData, activeServerIndex]);
+
+    // Update selected range when current episode or server changes
+    useEffect(() => {
+        if (movieData?.movie?.episodes?.[activeServerIndex]?.server_data) {
+            const episodes = movieData.movie.episodes[activeServerIndex].server_data;
+            if (currentEpisode) {
+                const currentIndex = episodes.findIndex(ep => ep.link_m3u8 === currentEpisode.link_m3u8);
+                if (currentIndex !== -1) {
+                    setSelectedRangeIndex(Math.floor(currentIndex / EPISODES_PER_RANGE));
+                }
+            }
+        }
+    }, [currentEpisode, activeServerIndex, movieData]);
 
     if (loading) {
         return <LoadingSpinner />;
@@ -116,11 +312,24 @@ export default function WatchPage() {
     }
 
     const { movie } = movieData;
+    const episodes = movie.episodes?.[activeServerIndex]?.server_data || [];
+
+    const ranges = [];
+    if (episodes.length > EPISODES_PER_RANGE) {
+        for (let i = 0; i < episodes.length; i += EPISODES_PER_RANGE) {
+            const startLabel = episodes[i].name;
+            const lastInIndex = Math.min(i + EPISODES_PER_RANGE - 1, episodes.length - 1);
+            const endLabel = episodes[lastInIndex].name;
+            ranges.push({ start: startLabel, end: endLabel, index: Math.floor(i / EPISODES_PER_RANGE) });
+        }
+    }
+
+    const filteredEpisodes = ranges.length > 0
+        ? episodes.slice(selectedRangeIndex * EPISODES_PER_RANGE, (selectedRangeIndex + 1) * EPISODES_PER_RANGE)
+        : episodes;
 
     return (
         <div className="w-full min-h-screen bg-[#060814] text-white overflow-x-hidden font-inter">
-
-            {/* 1. The Watch Stage - Immersive Backdrop for Player */}
             <div className="relative pt-24 pb-12 bg-gradient-to-b from-black/40 to-transparent">
                 <div
                     className="absolute inset-x-0 top-0 h-[500px] opacity-20 pointer-events-none"
@@ -147,17 +356,26 @@ export default function WatchPage() {
                             <div className="relative group">
                                 <div className="absolute -inset-1 bg-primary-yellow/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
                                 <div className="relative aspect-video bg-black rounded-none overflow-hidden shadow-2xl border border-white/5 ring-1 ring-white/10">
-                                    {currentEpisode?.link_m3u8 ? (
-                                        <VideoPlayer
-                                            key={currentEpisode.link_m3u8}
-                                            videoUrl={currentEpisode.link_m3u8}
-                                            movieId={movie.Id || movie._id}
-                                            movieName={movie.name}
-                                            movieSlug={movie.slug}
-                                            movieThumbUrl={movie.thumb_url}
-                                            episode={currentEpisode.name}
-                                            autoPlay={true}
-                                        />
+                                    {(isAuthenticated && resumeLoading && !currentEpisode?.link_m3u8) ? (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <LoadingSpinner />
+                                        </div>
+                                    ) : currentEpisode?.link_m3u8 ? (
+                                        <>
+                                            <VideoPlayer
+                                                key={`${currentEpisode.link_m3u8}-${initialTime}`}
+                                                videoUrl={currentEpisode.link_m3u8}
+                                                movieId={movie.Id || movie._id}
+                                                movieName={movie.name}
+                                                movieSlug={movie.slug}
+                                                movieThumbUrl={movie.thumb_url}
+                                                episode={currentEpisode.name.toString().replace(/\.$/, '')}
+                                                initialTime={initialTime}
+                                                autoPlay={true}
+                                                onNext={hasNextEpisode() ? handleNextEpisode : null}
+                                                onPrev={hasPrevEpisode() ? handlePrevEpisode : null}
+                                            />
+                                        </>
                                     ) : movie.trailer_url ? (
                                         <div className="absolute inset-0 w-full h-full group/trailer">
                                             <iframe
@@ -218,8 +436,8 @@ export default function WatchPage() {
                                         <div className="flex flex-wrap gap-2 mb-2">
                                             <span className="px-3 py-1 bg-primary-yellow text-black text-[10px] font-bold rounded-md tracking-wider uppercase">Hot</span>
                                             {movie.tmdb?.vote_average > 0 && (
-                                                <span className="px-3 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-md tracking-wider uppercase border border-blue-500 shadow-[0_0_10px_rgba(37,99,235,0.3)] flex items-center gap-1">
-                                                    <Star size={10} fill="currentColor" /> TMDB {movie.tmdb.vote_average.toFixed(1)}
+                                                <span className="px-3 py-1 bg-[#f5c518] text-black text-[10px] font-black rounded-md tracking-wider uppercase border border-[#f5c518] shadow-[0_0_15px_rgba(245,197,24,0.3)] flex items-center gap-1">
+                                                    <Star size={10} fill="currentColor" /> IMDB {movie.tmdb.vote_average.toFixed(1)}
                                                 </span>
                                             )}
                                             <span className="px-3 py-1 bg-white/10 backdrop-blur-md text-white text-[10px] font-bold rounded-md tracking-wider uppercase border border-white/10">{movie.quality}</span>
@@ -228,6 +446,7 @@ export default function WatchPage() {
                                         <p className="text-sm text-white/60 line-clamp-2 md:line-clamp-none leading-relaxed italic" dangerouslySetInnerHTML={{ __html: movie.content.slice(0, 300) + '...' }}></p>
                                     </div>
                                 </div>
+
 
                                 {/* Advanced Servers & Episodes Deck */}
                                 <div className="glass-panel rounded-2xl border border-white/5 shadow-2xl relative overflow-visible">
@@ -312,17 +531,39 @@ export default function WatchPage() {
                                         </div>
                                     </div>
 
+                                    {/* Range Selector Bar - Only if more than 100 eps */}
+                                    {ranges.length > 0 && (
+                                        <div className="flex flex-wrap items-center gap-2 p-4 bg-white/5 border-b border-white/5">
+                                            <div className="flex items-center gap-2 px-3 mr-2 border-r border-white/10 shrink-0 mb-1 lg:mb-0">
+                                                <Layers size={14} className="text-white/20" />
+                                                <span className="text-[10px] font-black uppercase text-white/30 tracking-widest leading-none">Phân đoạn</span>
+                                            </div>
+                                            {ranges.map((range) => (
+                                                <button
+                                                    key={range.index}
+                                                    onClick={() => setSelectedRangeIndex(range.index)}
+                                                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${selectedRangeIndex === range.index
+                                                        ? 'bg-primary-yellow text-black border-primary-yellow shadow-[0_0_15px_rgba(252,213,63,0.2)] transform scale-105 z-10'
+                                                        : 'bg-[#1a1c24] text-white/40 border-white/5 hover:bg-white/10 hover:border-white/20 hover:text-white'
+                                                        }`}
+                                                >
+                                                    Tập {range.start} - {range.end}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
                                     {/* Episodes Grid Box */}
                                     <div className="relative p-6 overflow-hidden transition-all duration-700 ease-in-out bg-black/20">
 
                                         {/* Thumbnail Card Mode (Rút gọn OFF) */}
                                         <div className={`grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 transition-all duration-500 ease-out ${!isEpisodesCollapsed ? 'opacity-100 translate-y-0 relative z-10' : 'opacity-0 -translate-y-10 absolute inset-x-6 top-6 pointer-events-none'}`}>
-                                            {movie.episodes?.[activeServerIndex]?.server_data?.map((ep, i) => {
+                                            {filteredEpisodes.map((ep, i) => {
                                                 const isActive = currentEpisode?.link_m3u8 === ep.link_m3u8;
                                                 return (
                                                     <button
                                                         key={i}
-                                                        onClick={() => setCurrentEpisode(ep)}
+                                                        onClick={() => handleEpisodeChange(ep, 0)}
                                                         className={`group flex flex-col text-left transition-all duration-300 ${isActive ? 'scale-[1.02]' : 'hover:scale-[1.02]'}`}
                                                     >
                                                         <div className={`w-full aspect-video rounded-xl overflow-hidden mb-2 relative border-2 transition-all duration-500 ${isActive ? 'border-primary-yellow shadow-[0_0_15px_rgba(252,213,63,0.3)]' : 'border-white/10 group-hover:border-white/30'}`}>
@@ -355,12 +596,12 @@ export default function WatchPage() {
 
                                         {/* Compact Pill Mode (Rút gọn ON) */}
                                         <div className={`grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3 transition-all duration-500 ease-out ${isEpisodesCollapsed ? 'opacity-100 translate-y-0 relative z-10' : 'opacity-0 translate-y-10 absolute inset-x-6 top-6 pointer-events-none'}`}>
-                                            {movie.episodes?.[activeServerIndex]?.server_data?.map((ep, i) => {
+                                            {filteredEpisodes.map((ep, i) => {
                                                 const isActive = currentEpisode?.link_m3u8 === ep.link_m3u8;
                                                 return (
                                                     <button
                                                         key={i}
-                                                        onClick={() => setCurrentEpisode(ep)}
+                                                        onClick={() => handleEpisodeChange(ep, 0)}
                                                         className={`group h-11 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all duration-300 border ${isActive
                                                             ? 'bg-primary-yellow text-black border-primary-yellow/50 shadow-[0_0_20px_rgba(252,213,63,0.2)] shadow-inner transform scale-[1.03] z-10'
                                                             : 'bg-[#1a1c24] text-gray-300 border-white/5 hover:bg-white/10 hover:border-white/20 hover:text-white hover:scale-105'
@@ -445,34 +686,38 @@ export default function WatchPage() {
                             {/* Recommendations Selection */}
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-xs font-black uppercase tracking-[0.2em]">Đề xuất cho bạn</h3>
-                                    <ArrowRight size={16} className="text-white/20" />
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <Layers size={14} className="text-primary-yellow" />
+                                        Đề xuất cho bạn
+                                    </h3>
+                                    <Link to="/explore" className="text-[10px] font-bold text-white/20 hover:text-primary-yellow transition-colors uppercase tracking-widest">Khám phá</Link>
                                 </div>
 
                                 <div className="flex flex-col gap-4">
                                     {recommendations.length > 0 ? (
                                         recommendations.map((rec) => (
                                             <Link
-                                                key={rec._id}
+                                                key={rec.slug || rec._id}
                                                 to={`/watch/${rec.slug}`}
                                                 className="glass-panel p-2 rounded-2xl border border-white/5 flex gap-4 hover:bg-white/5 hover:border-white/20 transition-all group"
                                             >
-                                                <div className="w-20 aspect-[3/4] rounded-xl overflow-hidden shadow-lg shrink-0">
+                                                <div className="w-20 aspect-[3/4] rounded-xl overflow-hidden shadow-lg shrink-0 relative">
                                                     <img src={rec.thumb_url} alt={rec.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                                    <div className="absolute top-1 left-1 bg-[#f5c518] text-black text-[8px] font-black px-1.5 py-0.5 rounded-sm uppercase">IMDB {rec.tmdb?.vote_average || "8.5"}</div>
                                                 </div>
                                                 <div className="flex-1 py-1 flex flex-col justify-between">
                                                     <div>
                                                         <h4 className="text-xs font-black text-white group-hover:text-primary-yellow transition-colors line-clamp-2 leading-tight uppercase tracking-tighter">{rec.name}</h4>
-                                                        <p className="text-[10px] text-white/30 font-bold mt-1 uppercase">{rec.year} • {rec.episode_current}</p>
+                                                        <p className="text-[10px] text-white/30 font-bold mt-1 uppercase">{rec.year} • {rec.episode_current || rec.time}</p>
                                                     </div>
-                                                    <div className="flex items-center gap-1.5 text-[9px] font-black text-primary-yellow">
-                                                        <Star size={10} fill="currentColor" /> {rec.quality}
+                                                    <div className="flex items-center gap-1.5 text-[9px] font-black text-white/40 group-hover:text-white transition-colors uppercase">
+                                                        Xem ngay <ArrowRight size={10} />
                                                     </div>
                                                 </div>
                                             </Link>
                                         ))
                                     ) : (
-                                        [1, 2, 3, 4].map(i => (
+                                        [1, 2, 3, 4, 5].map(i => (
                                             <div key={i} className="w-full h-24 rounded-2xl bg-white/5 animate-pulse border border-white/5"></div>
                                         ))
                                     )}

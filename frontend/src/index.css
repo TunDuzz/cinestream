@@ -106,6 +106,7 @@ h6,
   animation: spin-slow 8s linear infinite;
 }
 
+
 /* Video Player Slider Customization */
 input[type="range"].v-slider {
   -webkit-appearance: none;

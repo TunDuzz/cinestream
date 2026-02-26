@@ -210,11 +210,9 @@ export default function Navbar() {
                         </div>
                     ) : (
                         <div className="flex items-center gap-3 shrink-0 whitespace-nowrap">
-                            <Link to="/login" className="hidden sm:block text-sm font-medium text-gray-300 hover:text-white transition-colors">
-                                Đăng nhập
-                            </Link>
-                            <Link to="/register" className="bg-primary-yellow text-black px-4 py-2 rounded-full text-sm font-semibold hover:bg-yellow-400 transition-colors shadow-[0_0_15px_rgba(234,179,8,0.2)]">
-                                Đăng ký
+                            <Link to="/login" className="bg-primary-yellow text-black px-4 py-2 rounded-full text-sm font-semibold hover:bg-yellow-400 transition-colors shadow-[0_0_15px_rgba(234,179,8,0.2)] flex items-center gap-2">
+                                <User size={16} />
+                                Thành viên
                             </Link>
                         </div>
                     )}

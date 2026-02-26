@@ -1,3 +1,5 @@
+using System;
+
 namespace Cinestream.Application.DTOs.WatchHistory;
 
 public class WatchHistoryDto
@@ -9,4 +11,5 @@ public class WatchHistoryDto
     public string? Episode { get; set; }
     public int WatchedTimeInSeconds { get; set; }
     public bool IsCompleted { get; set; }
+    public DateTime LastWatchedAt { get; set; }
 }

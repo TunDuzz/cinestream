@@ -56,18 +56,13 @@ export default function HeroSection({ movies = [] }) {
             badges.push(<span key="year" className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded border border-white/5">{movie.year}</span>);
         }
 
-        // 3. Phim Lẻ vs Phim Bộ logic
         if (movie.type === 'single') {
-            // Phim Lẻ: Show Duration, remove ep count
             if (movie.time) {
                 badges.push(<span key="time" className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded border border-white/5">{movie.time}</span>);
             }
         } else {
-            // Phim Bộ: Parts & Episodes
-            // Default "Phần 1" if it's a series
             badges.push(<span key="part" className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded border border-white/5">Phần 1</span>);
 
-            // Episode status
             let epText = movie.episodeCurrent || "";
             const isCompleted = epText.toLowerCase().includes('full') || epText.toLowerCase().includes('hoàn tất');
 

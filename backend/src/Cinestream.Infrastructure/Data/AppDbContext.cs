@@ -31,5 +31,8 @@ public class AppDbContext : DbContext
             
         builder.Entity<Favorite>()
             .HasIndex(f => new { f.UserId, f.MovieId }).IsUnique();
+
+        builder.Entity<WatchHistory>()
+            .HasIndex(w => new { w.UserId, w.MovieSlug, w.Episode }).IsUnique();
     }
 }

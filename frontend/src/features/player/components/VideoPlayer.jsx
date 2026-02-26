@@ -6,11 +6,11 @@ import axiosClient from '../../../utils/axiosClient';
 import useAuthStore from '../../../store/useAuthStore';
 import {
     Play, Pause, RotateCcw, RotateCw, Volume2, VolumeX,
-    Settings, Maximize, Check, SkipForward,
+    Settings, Maximize, Check, SkipForward, SkipBack,
     PictureInPicture2, Gauge
 } from 'lucide-react';
 
-const VideoPlayer = ({ videoUrl, movieId, movieName, movieSlug, movieThumbUrl, episode, initialTime = 0, autoPlay = true }) => {
+const VideoPlayer = ({ videoUrl, movieId, movieName, movieSlug, movieThumbUrl, episode, initialTime = 0, autoPlay = true, onNext, onPrev }) => {
     const videoRef = useRef(null);
     const playerContainerRef = useRef(null);
     const playerRef = useRef(null);
@@ -113,14 +113,14 @@ const VideoPlayer = ({ videoUrl, movieId, movieName, movieSlug, movieThumbUrl, e
     }, [isPlaying, duration]); // Depend on relevant state if needed, though playerRef.current is usually stable
 
     const saveWatchHistory = async (time, isCompleted = false) => {
-        if (!isAuthenticated) return;
+        if (!isAuthenticated || time < 5) return;
         try {
             await axiosClient.post('/watch-history', {
                 movieId,
                 movieName,
                 movieSlug,
                 movieThumbUrl,
-                episode,
+                episode: episode.toString().replace(/\.$/, ''),
                 watchedTimeInSeconds: Math.floor(time),
                 isCompleted
             });
@@ -178,12 +178,13 @@ const VideoPlayer = ({ videoUrl, movieId, movieName, movieSlug, movieThumbUrl, e
                 clearInterval(saveProgressInterval.current);
                 saveProgressInterval.current = setInterval(() => {
                     saveWatchHistory(player.currentTime());
-                }, 10000);
+                }, 30000);
             });
 
             player.on('pause', () => {
                 setIsPlaying(false);
                 clearInterval(saveProgressInterval.current);
+                saveWatchHistory(player.currentTime());
             });
 
             player.on('timeupdate', () => setCurrentTime(player.currentTime()));
@@ -207,6 +208,9 @@ const VideoPlayer = ({ videoUrl, movieId, movieName, movieSlug, movieThumbUrl, e
                 setIsPlaying(false);
                 clearInterval(saveProgressInterval.current);
                 saveWatchHistory(player.currentTime(), true);
+                if (onNext) {
+                    setTimeout(onNext, 1000); // Small delay for smoothness
+                }
             });
         }
 
@@ -379,15 +383,27 @@ const VideoPlayer = ({ videoUrl, movieId, movieName, movieSlug, movieThumbUrl, e
                                 value={isMuted ? 0 : volume}
                                 onChange={handleVolumeChange}
                                 className="w-16 v-slider cursor-pointer hidden group-hover/volume:block"
+                                style={{
+                                    background: `linear-gradient(to right, 
+                                            white ${(isMuted ? 0 : volume) * 100}%, 
+                                            rgba(255,255,255,0.2) ${(isMuted ? 0 : volume) * 100}%)`
+                                }}
                             />
                         </div>
                     </div>
 
                     {/* Right Controls */}
                     <div className="flex items-center gap-5 relative">
-                        <button className="text-white/80 hover:text-white transition-colors">
-                            <SkipForward size={18} fill="white" />
-                        </button>
+                        {onPrev && (
+                            <button onClick={onPrev} className="text-white/80 hover:text-white transition-colors" title="Tập trước">
+                                <SkipBack size={18} fill="white" />
+                            </button>
+                        )}
+                        {onNext && (
+                            <button onClick={onNext} className="text-white/80 hover:text-white transition-colors" title="Tập tiếp theo">
+                                <SkipForward size={18} fill="white" />
+                            </button>
+                        )}
                         <button onClick={togglePiP} className="text-white/80 hover:text-white transition-colors">
                             <PictureInPicture2 size={16} />
                         </button>

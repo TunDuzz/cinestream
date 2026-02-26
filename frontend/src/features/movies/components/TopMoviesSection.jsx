@@ -21,15 +21,15 @@ const TopMoviesSection = ({ movies }) => {
         const tmdbVote = movie.tmdb?.vote_average || "";
 
         return (
-            <div className="absolute bottom-6 right-6 flex items-center gap-2 z-20">
+            <div className="absolute bottom-6 right-4 flex items-center gap-1.5 z-30">
                 {currentEpNum && (
                     <div className="bg-black/80 backdrop-blur-xl px-2 py-0.5 rounded-md text-[9px] font-black text-white border border-white/10 tracking-widest uppercase shadow-lg">
                         Tập {currentEpNum}
                     </div>
                 )}
                 {tmdbVote && tmdbVote !== "0.0" && (
-                    <div className="bg-emerald-500/90 backdrop-blur-md px-2 py-0.5 rounded-md text-[9px] font-black text-white border border-white/20 flex items-center gap-1 shadow-lg shadow-emerald-500/20">
-                        <span className="text-[7px] text-white/70 font-bold uppercase">TMDB</span> {tmdbVote}
+                    <div className="bg-[#f5c518] backdrop-blur-md px-2 py-0.5 rounded-md text-[9px] font-black text-black border border-black/10 flex items-center gap-1 shadow-lg shadow-yellow-500/20">
+                        <span className="text-[7px] text-black/70 font-bold uppercase">IMDB</span> {tmdbVote}
                     </div>
                 )}
             </div>
@@ -117,17 +117,17 @@ const TopMoviesSection = ({ movies }) => {
                                                     alt={movie.name}
                                                 />
                                                 <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/95 via-black/40 to-transparent z-10 opacity-90 group-hover:opacity-60 transition-opacity duration-500"></div>
-
-                                                {renderMovieBadges(movie)}
                                             </div>
+
+                                            {renderMovieBadges(movie)}
 
                                             <div className="absolute inset-0 bg-primary-yellow/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 mix-blend-overlay pointer-events-none"></div>
                                         </div>
 
-                                        {/* Info Block - Increased padding to prevent clipping */}
-                                        <div className="flex items-start gap-3 md:gap-4 pl-4 pr-1 pb-2">
-                                            {/* Rank Number - Light Gold Metallic (Padded left to avoid clipping) */}
-                                            <div className="text-5xl md:text-6xl font-black italic leading-none transition-all duration-500 group-hover:scale-110 min-w-[1.2em] flex justify-center"
+                                        {/* Info Block - Aligned and fixed width for rank */}
+                                        <div className="flex items-start gap-1 md:gap-2 px-0 pb-2">
+                                            {/* Rank Number - Light Gold Metallic */}
+                                            <div className="w-10 md:w-12 shrink-0 text-3xl md:text-5xl font-black italic mt-[-4px] transition-all duration-500 group-hover:scale-110"
                                                 style={{
                                                     background: 'linear-gradient(135deg, #FDE68A 0%, #F59E0B 50%, #D97706 100%)',
                                                     WebkitBackgroundClip: 'text',
@@ -138,7 +138,7 @@ const TopMoviesSection = ({ movies }) => {
                                                 {index + 1}
                                             </div>
 
-                                            <div className="flex flex-col gap-1 overflow-hidden pt-1">
+                                            <div className="flex flex-col gap-1 overflow-hidden">
                                                 <h3 className="text-white font-bold text-sm md:text-[15px] line-clamp-1 group-hover:text-primary-yellow transition-colors duration-300 leading-tight">
                                                     {movie.name}
                                                 </h3>
