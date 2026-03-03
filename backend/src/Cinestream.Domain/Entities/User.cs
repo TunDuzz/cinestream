@@ -17,4 +17,7 @@ public class User
 
     public ICollection<WatchHistory> WatchHistories { get; set; } = new List<WatchHistory>();
     public ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
+    public ICollection<Comment> Comments { get; set; } = new List<Comment>();
+    public ICollection<CommentReaction> CommentReactions { get; set; } = new List<CommentReaction>();
+    public ICollection<MovieRating> MovieRatings { get; set; } = new List<MovieRating>();
 }

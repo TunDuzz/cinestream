@@ -51,7 +51,8 @@ public class AuthService : IAuthService
             RefreshToken = refreshToken,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
-            Email = user.Email
+            Email = user.Email,
+            Id = user.Id
         };
     }
 
@@ -83,7 +84,8 @@ public class AuthService : IAuthService
             RefreshToken = refreshToken,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
-            Email = user.Email
+            Email = user.Email,
+            Id = user.Id
         };
     }
 
@@ -114,7 +116,8 @@ public class AuthService : IAuthService
             RefreshToken = newRefreshToken,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
-            Email = user.Email
+            Email = user.Email,
+            Id = user.Id
         };
     }
 }

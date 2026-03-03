@@ -80,7 +80,7 @@ export default function RegisterPage() {
                             <PlayCircle size={28} strokeWidth={2.5} />
                         </div>
                         <span className="font-heading font-bold text-2xl tracking-tight text-white">
-                            Cine<span className="text-gray-400 font-light">Stream</span>
+                            Cine<span className="text-white/40 font-light">Stream</span>
                         </span>
                     </Link>
                     <h1 className="text-2xl font-bold font-heading text-white">Tạo tài khoản</h1>

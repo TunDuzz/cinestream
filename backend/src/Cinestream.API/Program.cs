@@ -2,13 +2,18 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Cinestream.Infrastructure.Data;
 using Cinestream.Domain.Entities;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddHttpClient(); // For IHttpClientFactory (TMDB proxy)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Configure FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<Cinestream.Application.Validators.Comment.CreateCommentRequestValidator>();
 
 builder.Services.AddCors(options =>
 {
@@ -61,6 +66,8 @@ builder.Services.AddScoped<Cinestream.Application.Interfaces.Repositories.IUserR
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Repositories.IFavoriteRepository, Cinestream.Infrastructure.Repositories.FavoriteRepository>();
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Repositories.IWatchHistoryRepository, Cinestream.Infrastructure.Repositories.WatchHistoryRepository>();
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Repositories.IAppSettingRepository, Cinestream.Infrastructure.Repositories.AppSettingRepository>();
+builder.Services.AddScoped<Cinestream.Application.Interfaces.Repositories.ICommentRepository, Cinestream.Infrastructure.Repositories.CommentRepository>();
+builder.Services.AddScoped<Cinestream.Application.Interfaces.Repositories.IRatingRepository, Cinestream.Infrastructure.Repositories.RatingRepository>();
 
 // Common / Utilities
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Common.IJwtTokenGenerator, Cinestream.Infrastructure.Common.JwtTokenGenerator>();
@@ -71,6 +78,8 @@ builder.Services.AddScoped<Cinestream.Application.Interfaces.Services.IMovieServ
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Services.ICloudinaryService, Cinestream.Infrastructure.ExternalServices.CloudinaryService>();
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Services.IAuthService, Cinestream.Infrastructure.Services.AuthService>();
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Services.IWatchHistoryService, Cinestream.Infrastructure.Services.WatchHistoryService>();
+builder.Services.AddScoped<Cinestream.Application.Interfaces.Services.ICommentService, Cinestream.Application.Services.CommentService>();
+builder.Services.AddScoped<Cinestream.Application.Interfaces.Services.IRatingService, Cinestream.Application.Services.RatingService>();
 
 var app = builder.Build();
 

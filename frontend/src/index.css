@@ -20,6 +20,13 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Hide scrollbar globally */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
 }
 
 h1,
@@ -136,6 +143,42 @@ input[type="range"].v-slider::-webkit-slider-runnable-track {
 
 input[type="range"].v-slider:focus {
   outline: none;
+}
+
+/* Cinematic Grain / Noise Texture */
+.bg-noise {
+  position: relative;
+}
+
+.bg-noise::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Elite Typography Utilities */
+.tracking-cinematic {
+  letter-spacing: -0.05em;
+}
+
+.tracking-editorial {
+  letter-spacing: 0.2em;
+}
+
+/* Layering & Depth */
+.glass-ghost {
+  background: rgba(255, 255, 255, 0.01);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.shadow-cinematic {
+  box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7), 0 30px 60px -30px rgba(0, 0, 0, 0.8);
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

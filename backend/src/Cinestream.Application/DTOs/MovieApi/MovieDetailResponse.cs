@@ -2,6 +2,23 @@ using System.Text.Json.Serialization;
 
 namespace Cinestream.Application.DTOs.MovieApi;
 
+/// <summary>
+/// Represents a single actor from OPhim API, which can return either a string (name only)  
+/// or an object with profile image from TMDB.
+/// </summary>
+public class ActorDto
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("character")]
+    public string Character { get; set; } = string.Empty;
+
+    /// <summary> TMDB profile image path e.g. "/abc123.jpg" </summary>
+    [JsonPropertyName("profile_path")]
+    public string? ProfilePath { get; set; }
+}
+
 public class MovieDetailResponse
 {
     [JsonPropertyName("status")]
@@ -33,7 +50,8 @@ public class MovieDetailDto : MovieItemDto
     public int View { get; set; }
 
     [JsonPropertyName("actor")]
-    public List<string> Actor { get; set; } = new List<string>();
+    [JsonConverter(typeof(ActorListConverter))]
+    public List<ActorDto> Actor { get; set; } = new List<ActorDto>();
 
     [JsonPropertyName("director")]
     public List<string> Director { get; set; } = new List<string>();

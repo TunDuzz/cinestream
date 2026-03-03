@@ -37,7 +37,7 @@ const TopMoviesSection = ({ movies }) => {
     };
 
     return (
-        <div className="mb-24 pt-12 relative group/section animate-in fade-in slide-in-from-bottom-12 duration-1000">
+        <div id="top-movies" className="mb-24 pt-12 relative group/section animate-in fade-in slide-in-from-bottom-12 duration-1000 scroll-mt-24">
             {/* Ambient Background Glows */}
             <div className="absolute -top-20 left-1/4 w-[40%] h-[400px] bg-primary-yellow/5 blur-[120px] -z-10 pointer-events-none"></div>
 

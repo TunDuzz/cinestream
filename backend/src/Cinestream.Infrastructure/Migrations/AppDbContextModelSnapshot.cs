@@ -39,6 +39,90 @@ namespace Cinestream.Infrastructure.Migrations
                     b.ToTable("AppSettings");
                 });
 
+            modelBuilder.Entity("Cinestream.Domain.Entities.Comment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("DislikeCount")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsSpoiler")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("LikeCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MovieId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("ReplyCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MovieId");
+
+                    b.HasIndex("ParentId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("MovieId", "CreatedAt")
+                        .IsDescending();
+
+                    b.HasIndex("MovieId", "LikeCount")
+                        .IsDescending();
+
+                    b.ToTable("Comments");
+                });
+
+            modelBuilder.Entity("Cinestream.Domain.Entities.CommentReaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("CommentId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsLike")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("CommentId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("CommentReactions");
+                });
+
             modelBuilder.Entity("Cinestream.Domain.Entities.Favorite", b =>
                 {
                     b.Property<int>("Id")
@@ -65,30 +149,36 @@ namespace Cinestream.Infrastructure.Migrations
                     b.ToTable("Favorites");
                 });
 
-            modelBuilder.Entity("Cinestream.Domain.Entities.MovieUpdateLog", b =>
+            modelBuilder.Entity("Cinestream.Domain.Entities.MovieRating", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("char(36)");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("DetectedAt")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("LatestEpisode")
+                    b.Property<string>("MovieId")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("MovieSlug")
-                        .IsRequired()
-                        .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
+
+                    b.Property<int>("Score")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("MovieUpdateLogs");
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("MovieId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("MovieRatings");
                 });
 
             modelBuilder.Entity("Cinestream.Domain.Entities.User", b =>
@@ -179,10 +269,58 @@ namespace Cinestream.Infrastructure.Migrations
                     b.ToTable("WatchHistories");
                 });
 
+            modelBuilder.Entity("Cinestream.Domain.Entities.Comment", b =>
+                {
+                    b.HasOne("Cinestream.Domain.Entities.Comment", "Parent")
+                        .WithMany("Replies")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Cinestream.Domain.Entities.User", "User")
+                        .WithMany("Comments")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Parent");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Cinestream.Domain.Entities.CommentReaction", b =>
+                {
+                    b.HasOne("Cinestream.Domain.Entities.Comment", "Comment")
+                        .WithMany("Reactions")
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cinestream.Domain.Entities.User", "User")
+                        .WithMany("CommentReactions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Comment");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Cinestream.Domain.Entities.Favorite", b =>
                 {
                     b.HasOne("Cinestream.Domain.Entities.User", "User")
                         .WithMany("Favorites")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Cinestream.Domain.Entities.MovieRating", b =>
+                {
+                    b.HasOne("Cinestream.Domain.Entities.User", "User")
+                        .WithMany("MovieRatings")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -201,9 +339,22 @@ namespace Cinestream.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Cinestream.Domain.Entities.Comment", b =>
+                {
+                    b.Navigation("Reactions");
+
+                    b.Navigation("Replies");
+                });
+
             modelBuilder.Entity("Cinestream.Domain.Entities.User", b =>
                 {
+                    b.Navigation("CommentReactions");
+
+                    b.Navigation("Comments");
+
                     b.Navigation("Favorites");
+
+                    b.Navigation("MovieRatings");
 
                     b.Navigation("WatchHistories");
                 });
