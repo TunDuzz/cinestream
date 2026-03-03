@@ -310,3 +310,5 @@ D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\BCrypt.Net-Next.d
 D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\DotNetEnv.dll
 D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\Sprache.dll
 D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\appsettings.example.json
+D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\FluentValidation.dll
+D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\FluentValidation.DependencyInjectionExtensions.dll

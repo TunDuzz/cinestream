@@ -4,6 +4,8 @@ import { movieService } from '@/features/movies/services/movieService';
 import VideoPlayer from '@/features/player/components/VideoPlayer';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import useAuthStore from '@/store/useAuthStore';
+import { CommentSection } from '@/features/comments/components/CommentSection';
+import { RatingBox } from '@/features/comments/components/RatingBox';
 import axiosClient from '@/utils/axiosClient';
 import {
     ChevronLeft,
@@ -24,7 +26,8 @@ import {
     Layers,
     SkipBack,
     SkipForward,
-    Trophy
+    Trophy,
+    ArrowRight
 } from 'lucide-react';
 
 const EPISODES_PER_RANGE = 100;
@@ -40,13 +43,15 @@ export default function WatchPage() {
 
     // New Advanced Selector States
     const [activeServerIndex, setActiveServerIndex] = useState(0);
-    const [isEpisodesCollapsed, setIsEpisodesCollapsed] = useState(false);
+    const [isEpisodesCollapsed, setIsEpisodesCollapsed] = useState(true);
     const [isSeasonDropdownOpen, setIsSeasonDropdownOpen] = useState(false);
     const [selectedRangeIndex, setSelectedRangeIndex] = useState(0);
 
     const { isAuthenticated } = useAuthStore();
     const [initialTime, setInitialTime] = useState(0);
     const [resumeLoading, setResumeLoading] = useState(false);
+    // Map: actorName -> TMDB profile photo URL
+    const [actorPhotos, setActorPhotos] = useState({});
 
     const handleEpisodeChange = (ep, time = 0) => {
         setCurrentEpisode(ep);
@@ -100,47 +105,75 @@ export default function WatchPage() {
                 if (response.status && response.movie) {
                     setMovieData(response);
 
-                    // Fetch Recommendations by Category and Country in parallel
+                    // Fetch Recommendations with priority: same series > same category > same country
                     const fetchExtraData = async () => {
                         try {
-                            const requests = [];
+                            const seen = new Set([id]);
+                            // Helper to extract items from FilteredMovieListResponse { data: { items: [...] } }
+                            const extractItems = (res) => res?.data?.items || [];
+                            const addUnique = (list, items) => {
+                                (items || []).forEach(item => {
+                                    if (item?.slug && !seen.has(item.slug)) {
+                                        seen.add(item.slug);
+                                        list.push(item);
+                                    }
+                                });
+                            };
 
-                            // 1. Get Recommendations by Category
-                            if (response.movie.category?.[0]) {
-                                requests.push(movieService.getMoviesByCategory(response.movie.category[0].slug));
-                            }
+                            const finalList = [];
 
-                            // 2. Get Recommendations by Country
-                            if (response.movie.country?.[0]) {
-                                requests.push(movieService.getMoviesByCountry(response.movie.country[0].slug));
-                            }
+                            // --- Priority 1: Same series/season ---
+                            const currentTitle = response.movie.name;
+                            const baseName = currentTitle.replace(/\s*(?:-\s*)?(?:Part|Season|Mùa|Phần)\s*\d+.*$/i, '').trim();
+                            try {
+                                const searchRes = await movieService.searchMovies(baseName);
+                                const seriesItems = extractItems(searchRes).filter(item =>
+                                    item.name?.toLowerCase().includes(baseName.toLowerCase()) &&
+                                    item.slug !== id
+                                );
+                                addUnique(finalList, seriesItems);
+                            } catch (_) { }
 
-                            const results = await Promise.all(requests);
-
-                            let combinedData = [];
-                            results.forEach(res => {
-                                if (res?.items) {
-                                    combinedData = [...combinedData, ...res.items];
-                                } else if (res?.data?.items) {
-                                    combinedData = [...combinedData, ...res.data.items];
-                                }
+                            // --- Priority 2: Same category (up to 2 categories) ---
+                            const categoryRequests = (response.movie.category || []).slice(0, 2).map(cat =>
+                                movieService.getMoviesByCategory(cat.slug).catch(() => null)
+                            );
+                            const categoryResults = await Promise.all(categoryRequests);
+                            categoryResults.forEach(res => {
+                                addUnique(finalList, extractItems(res));
                             });
 
-                            // Remove duplicates and current movie
-                            const seenSlugs = new Set([id]);
-                            const filteredData = combinedData.filter(item => {
-                                if (seenSlugs.has(item.slug)) return false;
-                                seenSlugs.add(item.slug);
-                                return true;
-                            });
+                            // --- Priority 3: Same country (only if list is short) ---
+                            if (finalList.length < 15 && response.movie.country?.[0]) {
+                                try {
+                                    const countryRes = await movieService.getMoviesByCountry(response.movie.country[0].slug);
+                                    addUnique(finalList, extractItems(countryRes));
+                                } catch (_) { }
+                            }
 
-                            setRecommendations(filteredData.slice(0, 15));
+                            setRecommendations(finalList.slice(0, 6));
                         } catch (err) {
                             console.error("Error fetching extra movie data:", err);
                         }
                     };
 
                     fetchExtraData();
+
+                    // Fetch real actor photos from TMDB credits (requires TmdbApi:ApiKey in backend config)
+                    const tmdbId = response.movie.tmdb?.id;
+                    const tmdbType = response.movie.tmdb?.type || 'movie';
+                    if (tmdbId) {
+                        movieService.getCredits(tmdbId, tmdbType).then(creditsData => {
+                            const cast = creditsData?.cast || [];
+                            const photoMap = {};
+                            cast.forEach(person => {
+                                if (person.name && person.profile_path) {
+                                    photoMap[person.name] = `https://image.tmdb.org/t/p/w185${person.profile_path}`;
+                                }
+                            });
+                            if (Object.keys(photoMap).length > 0) setActorPhotos(photoMap);
+                        }).catch(() => { });
+                    }
 
                     let initialEp = null;
                     const allEpisodes = response.movie.episodes?.[activeServerIndex]?.server_data || [];
@@ -341,14 +374,14 @@ export default function WatchPage() {
                     }}
                 ></div>
 
-                <div className="max-w-[1400px] mx-auto px-4 md:px-10 relative z-10">
+                {/* Watch Section - Mobile/Tablet/TV Optimized Grid */}
+                <div className="max-w-[2560px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 2xl:px-16 py-4 sm:py-8 relative z-10">
                     {/* Breadcrumbs / Back */}
                     <Link to="/" className="inline-flex items-center gap-2 text-white/40 hover:text-white transition-all text-xs font-bold uppercase tracking-widest mb-6">
                         <ChevronLeft size={16} /> Trang chủ / {movie.name}
                     </Link>
 
-                    {/* Main Layout Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] xl:grid-cols-[1fr_400px] 2xl:grid-cols-[1fr_450px] gap-6 xl:gap-10 2xl:gap-12">
 
                         {/* Player Column */}
                         <div className="flex flex-col gap-6">
@@ -400,25 +433,25 @@ export default function WatchPage() {
                             </div>
 
                             {/* Action Console */}
-                            <div className="glass-panel p-4 px-6 rounded-2xl border border-white/5 flex flex-wrap items-center justify-between gap-4 shadow-xl">
-                                <div className="flex items-center gap-6">
-                                    <button className="flex items-center gap-2 text-sm font-bold text-white/80 hover:text-primary-yellow transition-colors">
-                                        <ThumbsUp size={18} /> {movie.view?.toLocaleString() || '1.2k'}
+                            <div className="glass-panel p-4 px-3 sm:px-6 rounded-2xl border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+                                <div className="flex items-center justify-around sm:justify-start gap-3 sm:gap-6">
+                                    <button className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-[10px] sm:text-sm font-bold text-white/80 hover:text-primary-yellow transition-colors shrink-0">
+                                        <ThumbsUp size={18} /> <span>{movie.view?.toLocaleString() || '1.2k'}</span>
                                     </button>
-                                    <button className="flex items-center gap-2 text-sm font-bold text-white/80 hover:text-primary-yellow transition-colors">
-                                        <Bookmark size={18} /> Lưu Phim
+                                    <button className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-[10px] sm:text-sm font-bold text-white/80 hover:text-primary-yellow transition-colors shrink-0">
+                                        <Bookmark size={18} /> <span>Lưu Phim</span>
                                     </button>
-                                    <button className="flex items-center gap-2 text-sm font-bold text-white/80 hover:text-primary-yellow transition-colors">
-                                        <Share2 size={18} /> Chia sẻ
+                                    <button className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-[10px] sm:text-sm font-bold text-white/80 hover:text-primary-yellow transition-colors shrink-0">
+                                        <Share2 size={18} /> <span>Chia sẻ</span>
                                     </button>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <button className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all">
+                                <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 border-white/5 pt-3 sm:pt-0">
+                                    <button className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] sm:text-xs font-bold transition-all">
                                         <Flag size={14} className="text-white/40" /> Báo lỗi
                                     </button>
-                                    <div className="w-px h-6 bg-white/10"></div>
-                                    <div className="flex items-center gap-2 text-[10px] font-black uppercase text-primary-yellow">
-                                        <Tv size={14} /> Server: {movie.episodes?.[0]?.server_name || 'PhimAPI'}
+                                    <div className="hidden sm:block w-px h-6 bg-white/10"></div>
+                                    <div className="flex items-center gap-2 text-[9px] sm:text-[10px] font-black uppercase text-primary-yellow">
+                                        <Tv size={14} /> <span className="max-w-[80px] sm:max-w-none truncate">{movie.episodes?.[0]?.server_name || 'PhimAPI'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -426,13 +459,13 @@ export default function WatchPage() {
                             {/* Details & Episodes Section */}
                             <div className="space-y-8 mt-4">
                                 {/* Movie Header Info */}
-                                <div className="flex flex-col md:flex-row gap-6">
-                                    <div className="w-32 aspect-[2/3] rounded-xl overflow-hidden border border-white/10 shadow-lg shrink-0 hidden md:block">
+                                <div className="flex flex-col md:flex-row items-start gap-6 lg:gap-8">
+                                    <div className="w-40 xl:w-48 aspect-[2/3] rounded-2xl overflow-hidden border border-white/10 shadow-2xl shrink-0 hidden md:block transition-all hover:scale-105 duration-500">
                                         <img src={movie.thumb_url} alt={movie.name} className="w-full h-full object-cover" />
                                     </div>
                                     <div className="flex-1">
-                                        <h1 className="text-3xl font-black mb-2 leading-tight">{movie.name}</h1>
-                                        <h2 className="text-lg text-white/40 font-medium mb-4">{movie.origin_name}</h2>
+                                        <h1 className="text-[clamp(1.5rem,4vw,2.5rem)] font-black mb-2 leading-tight">{movie.name}</h1>
+                                        <h2 className="text-[clamp(1rem,2vw,1.25rem)] text-white/40 font-medium mb-4">{movie.origin_name}</h2>
                                         <div className="flex flex-wrap gap-2 mb-2">
                                             <span className="px-3 py-1 bg-primary-yellow text-black text-[10px] font-bold rounded-md tracking-wider uppercase">Hot</span>
                                             {movie.tmdb?.vote_average > 0 && (
@@ -443,7 +476,8 @@ export default function WatchPage() {
                                             <span className="px-3 py-1 bg-white/10 backdrop-blur-md text-white text-[10px] font-bold rounded-md tracking-wider uppercase border border-white/10">{movie.quality}</span>
                                             <span className="px-2 py-1 bg-white/5 text-white/80 text-[10px] font-black rounded-sm uppercase border border-white/5">{movie.episode_current}</span>
                                         </div>
-                                        <p className="text-sm text-white/60 line-clamp-2 md:line-clamp-none leading-relaxed italic" dangerouslySetInnerHTML={{ __html: movie.content.slice(0, 300) + '...' }}></p>
+                                        <p className="text-sm text-white/60 line-clamp-2 md:line-clamp-none leading-relaxed italic mb-4" dangerouslySetInnerHTML={{ __html: movie.content.slice(0, 300) + '...' }}></p>
+                                        <RatingBox movieId={movie.slug || movie.Id || movie._id} />
                                     </div>
                                 </div>
 
@@ -454,24 +488,26 @@ export default function WatchPage() {
                                     {/* Action Header Strip */}
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 border-b border-white/5 relative z-20 bg-[#0a0a0a]/50 rounded-t-2xl">
 
-                                        <div className="flex items-center gap-4">
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                                             {/* Season Dropdown */}
                                             {relatedSeasons.length > 0 && (
                                                 <div className="relative">
                                                     <button
                                                         onClick={() => setIsSeasonDropdownOpen(!isSeasonDropdownOpen)}
-                                                        className="flex items-center gap-2 px-4 py-2 bg-transparent hover:bg-white/5 border-r border-white/10 text-white font-bold text-sm transition-colors uppercase tracking-wider"
+                                                        className="flex items-center justify-between sm:justify-start min-h-[44px] w-full sm:w-auto gap-2 px-4 py-2 bg-white/5 sm:bg-transparent hover:bg-white/5 sm:border-r border-white/10 rounded-xl sm:rounded-none text-white font-bold text-sm transition-colors uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-primary-yellow focus:ring-inset"
                                                     >
-                                                        <Tv size={16} className="text-primary-yellow mb-0.5" />
-                                                        <span className="max-w-[120px] truncate">
-                                                            {movie.name.match(/(?:Phần|Season|Mùa)\s*\d+/i)?.[0] || 'Phần 1'}
-                                                        </span>
+                                                        <div className="flex items-center gap-2">
+                                                            <Tv size={16} className="text-primary-yellow mb-0.5" />
+                                                            <span className="max-w-[150px] sm:max-w-[120px] truncate">
+                                                                {movie.name.match(/(?:Phần|Season|Mùa)\s*\d+/i)?.[0] || 'Phần 1'}
+                                                            </span>
+                                                        </div>
                                                         <ChevronDown size={14} className={`transition-transform duration-300 ${isSeasonDropdownOpen ? 'rotate-180' : ''}`} />
                                                     </button>
 
                                                     {/* Dropdown Menu */}
                                                     {isSeasonDropdownOpen && (
-                                                        <div className="absolute top-full left-0 mt-2 min-w-[220px] bg-[#18181b] border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] py-2 z-50">
+                                                        <div className="absolute top-full left-0 right-0 sm:right-auto mt-2 sm:min-w-[220px] bg-[#18181b] border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] py-2 z-50">
                                                             <div className="px-4 py-2 text-xs font-black uppercase text-white/30 tracking-widest border-b border-white/5 mb-1">Danh sách phần</div>
                                                             <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
                                                                 {relatedSeasons.map((season, idx) => {
@@ -504,12 +540,12 @@ export default function WatchPage() {
                                             )}
 
                                             {/* Server Tabs */}
-                                            <div className="flex flex-wrap items-center gap-1">
+                                            <div className="flex overflow-x-auto sm:overflow-visible no-scrollbar -mx-2 sm:mx-0 px-2 sm:px-0 items-center gap-1 shrink-0">
                                                 {movie.episodes?.map((server, idx) => (
                                                     <button
                                                         key={idx}
                                                         onClick={() => setActiveServerIndex(idx)}
-                                                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${activeServerIndex === idx
+                                                        className={`min-h-[44px] px-4 py-2 rounded-full text-xs font-bold transition-all border whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-primary-yellow ${activeServerIndex === idx
                                                             ? 'bg-white/10 border-white/20 text-white shadow-inner'
                                                             : 'bg-transparent border-transparent text-white/40 hover:text-white/80 hover:bg-white/5'}`}
                                                     >
@@ -520,36 +556,40 @@ export default function WatchPage() {
                                         </div>
 
                                         {/* Collapse Toggle */}
-                                        <div className="flex items-center gap-3 shrink-0 ml-4 md:ml-0">
-                                            <span className="text-[11px] font-bold text-white/60 uppercase tracking-widest">Rút gọn</span>
+                                        <div className="flex items-center justify-between sm:justify-start gap-3 shrink-0 mt-2 sm:mt-0">
+                                            <span className="text-[10px] sm:text-[11px] font-bold text-white/60 uppercase tracking-widest">Rút gọn</span>
                                             <button
                                                 onClick={() => setIsEpisodesCollapsed(!isEpisodesCollapsed)}
-                                                className={`w-10 h-5 rounded-full relative transition-colors duration-300 border ${isEpisodesCollapsed ? 'bg-white/10 border-white/20' : 'bg-primary-yellow/20 border-primary-yellow/50'}`}
+                                                className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full relative transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-primary-yellow`}
                                             >
-                                                <div className={`w-3.5 h-3.5 rounded-full absolute top-[2px] transition-all duration-300 shadow-sm ${isEpisodesCollapsed ? 'left-[3px] bg-white/40' : 'left-[21px] bg-primary-yellow'}`}></div>
+                                                <div className={`w-10 h-5 rounded-full relative transition-colors duration-300 border ${isEpisodesCollapsed ? 'bg-white/10 border-white/20' : 'bg-primary-yellow/20 border-primary-yellow/50'}`}>
+                                                    <div className={`w-3.5 h-3.5 rounded-full absolute top-[2px] transition-all duration-300 shadow-sm ${isEpisodesCollapsed ? 'left-[3px] bg-white/40' : 'left-[21px] bg-primary-yellow'}`}></div>
+                                                </div>
                                             </button>
                                         </div>
                                     </div>
 
                                     {/* Range Selector Bar - Only if more than 100 eps */}
                                     {ranges.length > 0 && (
-                                        <div className="flex flex-wrap items-center gap-2 p-4 bg-white/5 border-b border-white/5">
-                                            <div className="flex items-center gap-2 px-3 mr-2 border-r border-white/10 shrink-0 mb-1 lg:mb-0">
+                                        <div className="flex items-center gap-2 p-4 bg-white/5 border-b border-white/5 overflow-x-auto no-scrollbar">
+                                            <div className="flex items-center gap-2 px-3 mr-2 border-r border-white/10 shrink-0">
                                                 <Layers size={14} className="text-white/20" />
-                                                <span className="text-[10px] font-black uppercase text-white/30 tracking-widest leading-none">Phân đoạn</span>
+                                                <span className="text-[9px] sm:text-[10px] font-black uppercase text-white/30 tracking-widest leading-none">Phân đoạn</span>
                                             </div>
-                                            {ranges.map((range) => (
-                                                <button
-                                                    key={range.index}
-                                                    onClick={() => setSelectedRangeIndex(range.index)}
-                                                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${selectedRangeIndex === range.index
-                                                        ? 'bg-primary-yellow text-black border-primary-yellow shadow-[0_0_15px_rgba(252,213,63,0.2)] transform scale-105 z-10'
-                                                        : 'bg-[#1a1c24] text-white/40 border-white/5 hover:bg-white/10 hover:border-white/20 hover:text-white'
-                                                        }`}
-                                                >
-                                                    Tập {range.start} - {range.end}
-                                                </button>
-                                            ))}
+                                            <div className="flex items-center gap-2">
+                                                {ranges.map((range) => (
+                                                    <button
+                                                        key={range.index}
+                                                        onClick={() => setSelectedRangeIndex(range.index)}
+                                                        className={`min-h-[44px] px-4 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all border whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-primary-yellow ${selectedRangeIndex === range.index
+                                                            ? 'bg-primary-yellow text-black border-primary-yellow shadow-[0_0_15px_rgba(252,213,63,0.2)] transform scale-105 z-10'
+                                                            : 'bg-[#1a1c24] text-white/40 border-white/5 hover:bg-white/10 hover:border-white/20 hover:text-white'
+                                                            }`}
+                                                    >
+                                                        Tập {range.start} - {range.end}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
 
@@ -564,7 +604,8 @@ export default function WatchPage() {
                                                     <button
                                                         key={i}
                                                         onClick={() => handleEpisodeChange(ep, 0)}
-                                                        className={`group flex flex-col text-left transition-all duration-300 ${isActive ? 'scale-[1.02]' : 'hover:scale-[1.02]'}`}
+                                                        tabIndex={0}
+                                                        className={`group flex flex-col text-left transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary-yellow focus:scale-[1.05] rounded-xl ${isActive ? 'scale-[1.02]' : 'hover:scale-[1.02]'}`}
                                                     >
                                                         <div className={`w-full aspect-video rounded-xl overflow-hidden mb-2 relative border-2 transition-all duration-500 ${isActive ? 'border-primary-yellow shadow-[0_0_15px_rgba(252,213,63,0.3)]' : 'border-white/10 group-hover:border-white/30'}`}>
                                                             <img src={movie.thumb_url} alt={ep.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
@@ -602,7 +643,8 @@ export default function WatchPage() {
                                                     <button
                                                         key={i}
                                                         onClick={() => handleEpisodeChange(ep, 0)}
-                                                        className={`group h-11 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all duration-300 border ${isActive
+                                                        tabIndex={0}
+                                                        className={`group min-h-[44px] rounded-xl text-xs font-bold flex items-center justify-center gap-2 px-2 transition-all duration-300 border focus:outline-none focus:ring-4 focus:ring-primary-yellow focus:scale-105 ${isActive
                                                             ? 'bg-primary-yellow text-black border-primary-yellow/50 shadow-[0_0_20px_rgba(252,213,63,0.2)] shadow-inner transform scale-[1.03] z-10'
                                                             : 'bg-[#1a1c24] text-gray-300 border-white/5 hover:bg-white/10 hover:border-white/20 hover:text-white hover:scale-105'
                                                             }`}
@@ -616,26 +658,9 @@ export default function WatchPage() {
                                     </div>
                                 </div>
 
-                                {/* Comments Placeholder */}
-                                <div className="glass-panel p-8 rounded-3xl border border-white/5">
-                                    <div className="flex items-center justify-between mb-8">
-                                        <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                                            <MessageCircle size={18} /> Bình luận (24)
-                                        </h3>
-                                        <div className="flex gap-2">
-                                            <button className="px-4 py-1.5 bg-white/5 rounded-full text-[10px] font-bold border border-white/10">Mới nhất</button>
-                                            <button className="px-4 py-1.5 bg-transparent rounded-full text-[10px] font-bold text-white/30">Phổ biến</button>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 shrink-0"></div>
-                                        <div className="flex-1 bg-black/20 border border-white/5 rounded-2xl p-4 flex flex-col gap-3">
-                                            <textarea className="bg-transparent border-none outline-none text-sm text-white/60 placeholder:text-white/20 resize-none h-20" placeholder="Chia sẻ suy nghĩ của bạn về tập phim..."></textarea>
-                                            <div className="flex justify-end">
-                                                <button className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold transition-all">Gửi</button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                {/* Actual Comments */}
+                                <div className="glass-panel p-4 md:p-8 rounded-3xl border border-white/5">
+                                    <CommentSection movieId={movie.slug || movie.Id || movie._id} />
                                 </div>
                             </div>
                         </div>
@@ -649,29 +674,33 @@ export default function WatchPage() {
                                     Diễn viên
                                     <Users size={16} className="text-white/20" />
                                 </h3>
-                                <div className="grid grid-cols-3 gap-6">
-                                    {movie.actor && movie.actor.length > 0 && movie.actor[0] !== "" ? (
-                                        movie.actor.slice(0, 9).map((actorName, i) => (
-                                            <div key={i} className="flex flex-col items-center gap-3 group cursor-pointer">
-                                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary-yellow/40 to-purple-500/20 p-0.5 group-hover:p-1 transition-all duration-500">
-                                                    <div className="w-full h-full rounded-full bg-[#060814] overflow-hidden border border-white/10 relative">
-                                                        <img
-                                                            src="https://www.pngitem.com/pimgs/m/146-1468479_my-profile-icon-blank-profile-picture-circle-hd.png"
-                                                            alt={actorName}
-                                                            className="w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-all duration-500"
-                                                            onError={(e) => {
-                                                                e.target.style.display = 'none';
-                                                                e.target.nextSibling.style.display = 'flex';
-                                                            }}
-                                                        />
-                                                        <div className="absolute inset-0 bg-white/5 hidden items-center justify-center">
-                                                            <Users size={16} className="text-white/20" />
+                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 gap-4 sm:gap-6">
+                                    {movie.actor && movie.actor.length > 0 && (movie.actor[0]?.name || movie.actor[0]) !== "" ? (
+                                        movie.actor.slice(0, 9).map((actor, i) => {
+                                            const name = actor?.name || actor || '';
+                                            const character = actor?.character || '';
+                                            // Priority: TMDB credits photo > profile_path from API > default avatar
+                                            const realPhoto = actorPhotos[name] || (actor?.profile_path ? `https://image.tmdb.org/t/p/w185${actor.profile_path}` : null);
+                                            const DEFAULT_AVATAR = 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg';
+                                            return (
+                                                <div key={i} className="flex flex-col items-center gap-2 group cursor-pointer">
+                                                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-primary-yellow/40 to-purple-500/20 p-0.5 group-hover:p-1 transition-all duration-300">
+                                                        <div className="w-full h-full rounded-full bg-[#1a1c24] overflow-hidden border border-white/10">
+                                                            <img
+                                                                src={realPhoto || DEFAULT_AVATAR}
+                                                                alt={name}
+                                                                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-300"
+                                                                onError={(e) => { e.target.src = DEFAULT_AVATAR; }}
+                                                            />
                                                         </div>
                                                     </div>
+                                                    <div className="text-center">
+                                                        <span className="text-[10px] font-bold text-white/60 group-hover:text-white transition-colors line-clamp-1 block">{name}</span>
+                                                        {character && <span className="text-[9px] text-white/30 line-clamp-1 block">{character}</span>}
+                                                    </div>
                                                 </div>
-                                                <span className="text-[10px] font-bold text-white/40 group-hover:text-white transition-colors text-center line-clamp-1">{actorName}</span>
-                                            </div>
-                                        ))
+                                            );
+                                        })
                                     ) : (
                                         <div className="col-span-3 py-4 text-center text-white/20 text-[10px] font-bold uppercase tracking-widest">
                                             Thông tin đang cập nhật
@@ -702,7 +731,12 @@ export default function WatchPage() {
                                                 className="glass-panel p-2 rounded-2xl border border-white/5 flex gap-4 hover:bg-white/5 hover:border-white/20 transition-all group"
                                             >
                                                 <div className="w-20 aspect-[3/4] rounded-xl overflow-hidden shadow-lg shrink-0 relative">
-                                                    <img src={rec.thumb_url} alt={rec.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                                    <img
+                                                        src={rec.thumb_url?.startsWith('http') ? rec.thumb_url : `https://img.ophim.live/uploads/movies/${rec.thumb_url}`}
+                                                        alt={rec.name}
+                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                        onError={(e) => { e.target.src = 'https://via.placeholder.com/80x107/1a1a1a/444?text=No+Image'; }}
+                                                    />
                                                     <div className="absolute top-1 left-1 bg-[#f5c518] text-black text-[8px] font-black px-1.5 py-0.5 rounded-sm uppercase">IMDB {rec.tmdb?.vote_average || "8.5"}</div>
                                                 </div>
                                                 <div className="flex-1 py-1 flex flex-col justify-between">
@@ -717,7 +751,7 @@ export default function WatchPage() {
                                             </Link>
                                         ))
                                     ) : (
-                                        [1, 2, 3, 4, 5].map(i => (
+                                        [1, 2, 3, 4, 5, 6].map(i => (
                                             <div key={i} className="w-full h-24 rounded-2xl bg-white/5 animate-pulse border border-white/5"></div>
                                         ))
                                     )}

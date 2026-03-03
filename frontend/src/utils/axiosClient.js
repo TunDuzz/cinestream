@@ -2,7 +2,7 @@ import axios from 'axios';
 import useAuthStore from '../store/useAuthStore';
 
 const axiosClient = axios.create({
-    baseURL: 'http://localhost:5210/api', // HTTP URL of the backend to avoid dev cert issues
+    baseURL: 'http://localhost:5210/api/', // Added trailing slash for relative path compatibility
     headers: {
         'Content-Type': 'application/json',
     },

@@ -12,6 +12,9 @@ public class AppDbContext : DbContext
     public DbSet<WatchHistory> WatchHistories { get; set; }
     public DbSet<Favorite> Favorites { get; set; }
     public DbSet<AppSetting> AppSettings { get; set; }
+    public DbSet<Comment> Comments { get; set; }
+    public DbSet<CommentReaction> CommentReactions { get; set; }
+    public DbSet<MovieRating> MovieRatings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -34,5 +37,46 @@ public class AppDbContext : DbContext
 
         builder.Entity<WatchHistory>()
             .HasIndex(w => new { w.UserId, w.MovieSlug, w.Episode }).IsUnique();
+
+        builder.Entity<Comment>()
+            .HasOne(c => c.User)
+            .WithMany(u => u.Comments)
+            .HasForeignKey(c => c.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Comment>()
+            .HasOne(c => c.Parent)
+            .WithMany(c => c.Replies)
+            .HasForeignKey(c => c.ParentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Comment>().HasIndex(c => c.MovieId);
+        builder.Entity<Comment>().HasIndex(c => c.ParentId);
+        builder.Entity<Comment>().HasIndex(c => new { c.MovieId, c.CreatedAt }).IsDescending();
+        builder.Entity<Comment>().HasIndex(c => new { c.MovieId, c.LikeCount }).IsDescending();
+
+        builder.Entity<CommentReaction>()
+            .HasOne(r => r.User)
+            .WithMany(u => u.CommentReactions)
+            .HasForeignKey(r => r.UserId)
+            .OnDelete(DeleteBehavior.Cascade); // Set action to Cascade to match the convention for Users
+
+        builder.Entity<CommentReaction>()
+            .HasOne(r => r.Comment)
+            .WithMany(c => c.Reactions)
+            .HasForeignKey(r => r.CommentId)
+            .OnDelete(DeleteBehavior.Cascade); // Cascade so if comment is hard-deleted, so is the reaction
+
+        builder.Entity<CommentReaction>()
+            .HasIndex(r => new { r.CommentId, r.UserId }).IsUnique();
+
+        builder.Entity<MovieRating>()
+            .HasOne(r => r.User)
+            .WithMany(u => u.MovieRatings)
+            .HasForeignKey(r => r.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<MovieRating>()
+            .HasIndex(r => new { r.MovieId, r.UserId }).IsUnique();
     }
 }

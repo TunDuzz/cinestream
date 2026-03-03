@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Cinestream.Application.Interfaces.Services;
+using System.Net.Http.Headers;
 
 namespace Cinestream.API.Controllers;
 
@@ -8,10 +9,14 @@ namespace Cinestream.API.Controllers;
 public class MoviesController : ControllerBase
 {
     private readonly IMovieService _movieService;
+    private readonly IConfiguration _configuration;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public MoviesController(IMovieService movieService)
+    public MoviesController(IMovieService movieService, IConfiguration configuration, IHttpClientFactory httpClientFactory)
     {
         _movieService = movieService;
+        _configuration = configuration;
+        _httpClientFactory = httpClientFactory;
     }
 
     [HttpGet("latest")]
@@ -82,5 +87,41 @@ public class MoviesController : ControllerBase
         var result = await _movieService.GetCountriesAsync();
         if (result == null || !result.Status) return StatusCode(500, new { Message = "Error fetching countries" });
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Proxy TMDB credits to get real actor profile photos.
+    /// Requires TmdbApi:ApiKey to be set in appsettings.
+    /// </summary>
+    [HttpGet("credits/{tmdbId}")]
+    public async Task<IActionResult> GetMovieCredits(string tmdbId, [FromQuery] string mediaType = "movie")
+    {
+        var apiKey = _configuration["TmdbApi:ApiKey"];
+        var baseUrl = _configuration["TmdbApi:BaseUrl"] ?? "https://api.themoviedb.org/3";
+
+        if (string.IsNullOrWhiteSpace(apiKey))
+            return Ok(new { cast = Array.Empty<object>() }); // Return empty if no key configured
+
+        var mt = mediaType.ToLower() == "tv" ? "tv" : "movie";
+        // Use api_key query parameter instead of Bearer token for better compatibility
+        var url = $"{baseUrl}/{mt}/{tmdbId}/credits?api_key={apiKey}&language=vi-VN";
+
+        var httpClient = _httpClientFactory.CreateClient();
+        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        httpClient.DefaultRequestHeaders.Add("User-Agent", "Cinestream-App");
+
+        try
+        {
+            var response = await httpClient.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+                return Ok(new { cast = Array.Empty<object>() });
+
+            var json = await response.Content.ReadAsStringAsync();
+            return Content(json, "application/json");
+        }
+        catch
+        {
+            return Ok(new { cast = Array.Empty<object>() });
+        }
     }
 }

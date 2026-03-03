@@ -5,18 +5,18 @@ import { useNavigate, useLocation } from 'react-router-dom';
 export default function NavbarSearch() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isFocused, setIsFocused] = useState(false);
+    const [isMobileExpanded, setIsMobileExpanded] = useState(false);
     const inputRef = useRef(null);
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Parse the query parameter on load so the search bar shows what we searched for
+    // Parse searching query
     useEffect(() => {
         const queryParams = new URLSearchParams(location.search);
         const query = queryParams.get('q');
         if (query) {
             setSearchTerm(query);
         } else if (location.pathname !== '/search') {
-            // Only clear search term if we are not on the search page itself
             setSearchTerm('');
         }
     }, [location]);
@@ -26,48 +26,99 @@ export default function NavbarSearch() {
         if (searchTerm.trim()) {
             navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
             inputRef.current?.blur();
+            if (window.innerWidth < 768) setIsMobileExpanded(false);
         }
     };
 
-    const handleClear = () => {
-        setSearchTerm('');
-        inputRef.current?.focus();
-    };
-
     return (
-        <form
-            onSubmit={handleSearch}
-            className={`relative hidden md:flex items-center transition-all duration-300 w-40 md:w-48 lg:w-56 xl:w-64 shrink-0 rounded-full ${isFocused
-                ? 'shadow-[0_0_15px_rgba(234,179,8,0.15)] ring-1 ring-primary-yellow/30 bg-black/60'
-                : 'bg-white/5 hover:bg-white/10'
-                }`}
-        >
-            <Search
-                className={`absolute left-3 z-10 transition-colors ${isFocused ? 'text-primary-yellow' : 'text-gray-400'}`}
-                size={18}
-            />
-
-            <input
-                ref={inputRef}
-                type="text"
-                placeholder="Tìm kiếm phim, diễn viên..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                className="w-full bg-transparent border border-white/10 rounded-full py-2 pl-10 pr-10 text-sm focus:outline-none focus:border-primary-yellow/50 transition-all text-white placeholder-gray-500"
-            />
-
-            {/* Clear Button */}
-            {searchTerm && (
+        <>
+            {/* Desktop and Unexpanded Mobile State */}
+            <form
+                onSubmit={handleSearch}
+                className={`
+                    flex items-center rounded-full overflow-hidden h-[44px]
+                    w-[44px] md:w-56 xl:w-72 bg-transparent md:bg-white/5 transition-colors
+                    ${isMobileExpanded ? 'invisible md:visible' : 'relative hover:bg-white/10 md:hover:bg-white/10'}
+                    ${isFocused && !isMobileExpanded ? 'md:ring-1 md:ring-primary-yellow/40 md:bg-black/80' : ''}
+                `}
+            >
+                {/* Search Button (Triggers expand on mobile) */}
                 <button
                     type="button"
-                    onClick={handleClear}
-                    className="absolute right-3 text-gray-400 hover:text-primary-yellow transition-colors p-1"
+                    tabIndex={0}
+                    onClick={() => {
+                        if (window.innerWidth < 768) {
+                            if (!isMobileExpanded) {
+                                setIsMobileExpanded(true);
+                                setTimeout(() => {
+                                    if (inputRef.current) inputRef.current.focus();
+                                }, 10);
+                            }
+                        } else {
+                            handleSearch(new Event('submit'));
+                        }
+                    }}
+                    className="absolute left-0 z-10 w-[44px] h-[44px] flex items-center justify-center focus:outline-none rounded-full text-gray-400 md:hover:text-white"
                 >
-                    <X size={14} />
+                    <Search size={18} />
                 </button>
+
+                {/* Input (Desktop only visible, hidden/opacity-0 on mobile) */}
+                <input
+                    type="text"
+                    placeholder="Tìm kiếm phim, diễn viên..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+                    className="w-full h-full bg-transparent border-none focus:outline-none text-[15px] md:text-sm font-medium text-white placeholder-gray-500 opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto pl-[44px] pr-10"
+                />
+
+                {/* Clear Button (Desktop only) */}
+                {searchTerm && isFocused && (
+                    <button
+                        type="button"
+                        onClick={() => setSearchTerm('')}
+                        className="hidden md:flex absolute right-1 text-gray-400 hover:text-primary-yellow p-1 min-h-[44px] items-center justify-center rounded-full"
+                    >
+                        <X size={14} />
+                    </button>
+                )}
+            </form>
+
+            {/* Mobile Expanded Overlay - Perfect match layout without animations */}
+            {isMobileExpanded && (
+                <div className="absolute inset-0 z-[70] bg-[#0a0a0c] rounded-full flex items-center px-4 md:hidden">
+                    <form onSubmit={handleSearch} className="flex-1 h-[36px] bg-[#1a1c22] border border-white/5 rounded-[12px] flex items-center px-3 mr-1">
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            placeholder="Tìm kiếm phim, diễn viên..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full h-full bg-transparent border-none text-[14px] font-medium text-white placeholder-gray-500 focus:outline-none"
+                        />
+                        {searchTerm && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchTerm('')}
+                                className="text-gray-400 p-1.5 focus:outline-none"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </form>
+
+                    {/* X Button replacing original Search icon precisely */}
+                    <button
+                        type="button"
+                        onClick={() => setIsMobileExpanded(false)}
+                        className="w-[44px] h-[44px] flex items-center justify-center shrink-0 text-[#ef4444]"
+                    >
+                        <X size={20} strokeWidth={2.5} />
+                    </button>
+                </div>
             )}
-        </form>
+        </>
     );
 }

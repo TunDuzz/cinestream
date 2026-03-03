@@ -92,7 +92,8 @@ export default function MovieCard({ movie }) {
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
                 data-hovered={isHovered}
-                className="group relative flex-shrink-0 cursor-pointer block w-[140px] md:w-[180px] aspect-[2/3]"
+                tabIndex={0}
+                className="group relative flex-shrink-0 cursor-pointer block w-full aspect-[2/3] focus:outline-none focus:ring-4 focus:ring-primary-yellow focus:scale-105 rounded-2xl transition-all"
             >
                 {/* Main Flat Container */}
                 <div className={`w-full h-full relative transition-all duration-300 rounded-2xl border ${isHovered ? 'border-primary-yellow/60 shadow-[0_0_25px_rgba(252,213,63,0.4)] scale-[1.02] z-40' : 'border-white/5 group-hover:-translate-y-2 group-hover:shadow-[0_15px_30px_rgba(252,213,63,0.15)]'} overflow-hidden bg-[#1a1a1a]`}>
