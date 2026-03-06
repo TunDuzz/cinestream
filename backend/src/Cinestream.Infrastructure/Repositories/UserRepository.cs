@@ -50,4 +50,8 @@ public class UserRepository : IUserRepository
             await _context.SaveChangesAsync();
         }
     }
+    public async Task<int> CountUsersByIpAsync(string ipAddress)
+    {
+        return await _context.Users.CountAsync(u => u.CreatedIpAddress == ipAddress);
+    }
 }

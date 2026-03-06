@@ -2,7 +2,20 @@ import { create } from 'zustand';
 import { jwtDecode } from 'jwt-decode';
 
 const useAuthStore = create((set) => ({
-    user: JSON.parse(localStorage.getItem('user')) || null,
+    user: (() => {
+        const storedUser = JSON.parse(localStorage.getItem('user'));
+        const token = localStorage.getItem('token');
+        if (storedUser && token && !storedUser.id) {
+            try {
+                const decoded = jwtDecode(token);
+                storedUser.id = decoded.sub || decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+                localStorage.setItem('user', JSON.stringify(storedUser));
+            } catch (e) {
+                console.error('Auto-repair user ID failed:', e);
+            }
+        }
+        return storedUser;
+    })(),
     token: localStorage.getItem('token') || null,
     refreshToken: localStorage.getItem('refreshToken') || null,
     isAuthenticated: !!localStorage.getItem('token'),
@@ -28,9 +41,14 @@ const useAuthStore = create((set) => ({
         const decoded = jwtDecode(token);
         const role = decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
         const isAdmin = role === 'Admin';
-        console.log('Login Info:', { decoded, role, isAdmin });
+        const userId = decoded.sub || decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
 
-        set({ user: userData, token, refreshToken, isAuthenticated: true, isAdmin });
+        const finalUser = { ...userData, id: userId };
+        localStorage.setItem('user', JSON.stringify(finalUser));
+
+        console.log('Login Info:', { decoded, role, isAdmin, userId });
+
+        set({ user: finalUser, token, refreshToken, isAuthenticated: true, isAdmin });
     },
 
     logout: () => {

@@ -14,10 +14,10 @@ public class WatchHistoryRepository : IWatchHistoryRepository
         _context = context;
     }
 
-    public async Task<WatchHistory?> GetByUserIdAndEpisodeAsync(Guid userId, string movieId, string? episode)
+    public async Task<WatchHistory?> GetByUserIdAndEpisodeAsync(Guid userId, string movieSlug, string? episode)
     {
         return await _context.WatchHistories
-            .FirstOrDefaultAsync(w => w.UserId == userId && w.MovieId == movieId && w.Episode == episode);
+            .FirstOrDefaultAsync(w => w.UserId == userId && w.MovieSlug == movieSlug && w.Episode == episode);
     }
 
     public async Task<IEnumerable<WatchHistory>> GetUserHistoryAsync(Guid userId)
@@ -38,6 +38,14 @@ public class WatchHistoryRepository : IWatchHistoryRepository
     {
         _context.WatchHistories.Update(history);
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<IEnumerable<WatchHistory>> GetByMovieIdAsync(Guid userId, string movieSlug)
+    {
+        return await _context.WatchHistories
+            .Where(w => w.UserId == userId && w.MovieSlug == movieSlug)
+            .OrderByDescending(w => w.LastWatchedAt)
+            .ToListAsync();
     }
 
     public async Task<IEnumerable<WatchHistory>> GetAllAsync()

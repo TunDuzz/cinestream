@@ -152,6 +152,12 @@
       "frameworks": {
         "net9.0": {
           "targetAlias": "net9.0",
+          "dependencies": {
+            "FluentValidation.DependencyInjectionExtensions": {
+              "target": "Package",
+              "version": "[12.1.1, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -313,9 +319,9 @@
               "target": "Package",
               "version": "[9.0.2, )"
             },
-            "Pomelo.EntityFrameworkCore.MySql": {
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
-              "version": "[9.0.0, )"
+              "version": "[9.0.4, )"
             }
           },
           "imports": [

@@ -2,13 +2,61 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Cinestream.Infrastructure.Data;
 using Cinestream.Domain.Entities;
+using FluentValidation;
+
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddHttpClient(); // For IHttpClientFactory (TMDB proxy)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Configure Output Caching and Rate Limiting
+builder.Services.AddOutputCache();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 100,
+                QueueLimit = 0,
+                Window = TimeSpan.FromSeconds(10)
+            }));
+
+    options.AddPolicy("StrictPolicy", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 5,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+
+    options.AddPolicy("AuthPolicy", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 2,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+});
+
+// Configure FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<Cinestream.Application.Validators.Comment.CreateCommentRequestValidator>();
 
 builder.Services.AddCors(options =>
 {
@@ -24,7 +72,7 @@ builder.Services.AddCors(options =>
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+    options.UseNpgsql(connectionString);
 });
 
 
@@ -61,6 +109,8 @@ builder.Services.AddScoped<Cinestream.Application.Interfaces.Repositories.IUserR
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Repositories.IFavoriteRepository, Cinestream.Infrastructure.Repositories.FavoriteRepository>();
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Repositories.IWatchHistoryRepository, Cinestream.Infrastructure.Repositories.WatchHistoryRepository>();
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Repositories.IAppSettingRepository, Cinestream.Infrastructure.Repositories.AppSettingRepository>();
+builder.Services.AddScoped<Cinestream.Application.Interfaces.Repositories.ICommentRepository, Cinestream.Infrastructure.Repositories.CommentRepository>();
+builder.Services.AddScoped<Cinestream.Application.Interfaces.Repositories.IRatingRepository, Cinestream.Infrastructure.Repositories.RatingRepository>();
 
 // Common / Utilities
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Common.IJwtTokenGenerator, Cinestream.Infrastructure.Common.JwtTokenGenerator>();
@@ -71,6 +121,8 @@ builder.Services.AddScoped<Cinestream.Application.Interfaces.Services.IMovieServ
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Services.ICloudinaryService, Cinestream.Infrastructure.ExternalServices.CloudinaryService>();
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Services.IAuthService, Cinestream.Infrastructure.Services.AuthService>();
 builder.Services.AddScoped<Cinestream.Application.Interfaces.Services.IWatchHistoryService, Cinestream.Infrastructure.Services.WatchHistoryService>();
+builder.Services.AddScoped<Cinestream.Application.Interfaces.Services.ICommentService, Cinestream.Application.Services.CommentService>();
+builder.Services.AddScoped<Cinestream.Application.Interfaces.Services.IRatingService, Cinestream.Application.Services.RatingService>();
 
 var app = builder.Build();
 
@@ -84,6 +136,9 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
+
+app.UseRateLimiter();
+app.UseOutputCache();
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -37,10 +37,22 @@ public class AdminController : ControllerBase
         var watchHistories = await _watchHistoryRepository.GetAllAsync();
         var favorites = await _favoriteRepository.GetAllAsync();
 
+        var now = DateTime.UtcNow;
+        var thisWeekStart = now.AddDays(-7);
+        var prevWeekStart = now.AddDays(-14);
+
         var totalUsers = users.Count();
         var totalViews = watchHistories.Count();
         var totalFavorites = favorites.Count();
         var activeUserCount = watchHistories.Select(w => w.UserId).Distinct().Count();
+
+        // Weekly comparison
+        var newUsersThisWeek = users.Count(u => u.CreatedAt >= thisWeekStart);
+        var newUsersPrevWeek = users.Count(u => u.CreatedAt >= prevWeekStart && u.CreatedAt < thisWeekStart);
+        var viewsThisWeek = watchHistories.Count(w => w.LastWatchedAt >= thisWeekStart);
+        var viewsPrevWeek = watchHistories.Count(w => w.LastWatchedAt >= prevWeekStart && w.LastWatchedAt < thisWeekStart);
+        var favThisWeek = favorites.Count(f => f.AddedAt >= thisWeekStart);
+        var favPrevWeek = favorites.Count(f => f.AddedAt >= prevWeekStart && f.AddedAt < thisWeekStart);
 
         // Calculate top movies (group by MovieId, count view, take top 5)
         var topMovies = watchHistories
@@ -63,7 +75,13 @@ public class AdminController : ControllerBase
             TotalViews = totalViews,
             TotalFavorites = totalFavorites,
             ActiveUserCount = activeUserCount,
-            TopMovies = topMovies
+            TopMovies = topMovies,
+            NewUsersThisWeek = newUsersThisWeek,
+            NewUsersPrevWeek = newUsersPrevWeek,
+            ViewsThisWeek = viewsThisWeek,
+            ViewsPrevWeek = viewsPrevWeek,
+            FavoritesThisWeek = favThisWeek,
+            FavoritesPrevWeek = favPrevWeek
         };
 
         return Ok(stats);

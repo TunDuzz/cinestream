@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { PlayCircle, Mail, Lock, Loader2 } from 'lucide-react';
+import { PlayCircle, Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import { authService } from '../services/authService';
 import useAuthStore from '@/store/useAuthStore';
 import { jwtDecode } from 'jwt-decode';
@@ -10,6 +10,7 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const navigate = useNavigate();
     const { login } = useAuthStore();
@@ -52,19 +53,19 @@ export default function LoginPage() {
     return (
         <div className="relative min-h-[100dvh] flex items-center justify-center overflow-auto font-inter py-6 sm:py-12">
             {/* Cinematic Background */}
-            <div className="fixed inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://img.ophim.live/uploads/movies/biet-doi-bao-thu-thumb.jpg')" }}>
-                <div className="absolute inset-0 bg-[#060814]/80 backdrop-blur-md"></div>
-                <div className="absolute inset-0 bg-gradient-to-t from-[#060814] via-[#060814]/50 to-transparent"></div>
+            <div className="fixed inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/assets/images/posters.jpg')" }}>
+                <div className="absolute inset-0 bg-[#060814]/40 backdrop-blur-[2px]"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#060814]/60 via-[#060814]/30 to-transparent"></div>
             </div>
 
             <div className="relative z-10 w-full max-w-[400px] px-4">
                 <div className="text-center mb-6">
-                    <Link to="/" className="inline-flex items-center gap-2 group mb-3">
-                        <div className="bg-primary-yellow text-black p-1.5 rounded-full group-hover:scale-110 transition-transform">
-                            <PlayCircle size={28} strokeWidth={2.5} />
+                    <Link to="/" className="inline-flex items-center gap-2.5 group mb-3">
+                        <div className="bg-primary-yellow text-black p-2 rounded-full group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(234,179,8,0.3)]">
+                            <PlayCircle size={32} strokeWidth={2.5} />
                         </div>
                         <span className="font-heading font-bold text-2xl tracking-tight text-white">
-                            Cine<span className="text-gray-400 font-light">Stream</span>
+                            Cine<span className="text-white/40 font-light">Stream</span>
                         </span>
                     </Link>
                     <h1 className="text-2xl font-bold font-heading text-white">Chào mừng trở lại</h1>
@@ -101,13 +102,20 @@ export default function LoginPage() {
                             <div className="relative">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} />
                                 <input
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
-                                    className="w-full bg-black/40 border border-white/10 rounded-2xl py-2.5 pl-11 pr-4 text-white text-sm placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-primary-yellow focus:border-transparent transition-all"
+                                    className="w-full bg-black/40 border border-white/10 rounded-2xl py-2.5 pl-11 pr-12 text-white text-sm placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-primary-yellow focus:border-transparent transition-all"
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+                                >
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
                             </div>
                         </div>
 

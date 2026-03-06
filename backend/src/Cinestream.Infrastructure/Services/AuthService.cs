@@ -22,6 +22,15 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
+        if (!string.IsNullOrEmpty(request.IpAddress) && request.IpAddress != "Unknown")
+        {
+            var count = await _userRepository.CountUsersByIpAsync(request.IpAddress);
+            if (count >= 5)
+            {
+                throw new Exception("Thiết bị của bạn đã đạt giới hạn tạo tài khoản tối đa (5 tài khoản).");
+            }
+        }
+
         var existingUser = await _userRepository.GetByEmailAsync(request.Email);
         if (existingUser != null)
         {
@@ -33,6 +42,7 @@ public class AuthService : IAuthService
             Email = request.Email,
             DisplayName = request.DisplayName,
             PasswordHash = _passwordHasher.HashPassword(request.Password),
+            CreatedIpAddress = request.IpAddress,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -51,7 +61,8 @@ public class AuthService : IAuthService
             RefreshToken = refreshToken,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
-            Email = user.Email
+            Email = user.Email,
+            Id = user.Id
         };
     }
 
@@ -83,7 +94,8 @@ public class AuthService : IAuthService
             RefreshToken = refreshToken,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
-            Email = user.Email
+            Email = user.Email,
+            Id = user.Id
         };
     }
 
@@ -114,7 +126,8 @@ public class AuthService : IAuthService
             RefreshToken = newRefreshToken,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
-            Email = user.Email
+            Email = user.Email,
+            Id = user.Id
         };
     }
 }

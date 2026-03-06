@@ -39,4 +39,15 @@ public class WatchHistoryController : ControllerBase
         var history = await _watchHistoryService.GetUserHistoryAsync(userId);
         return Ok(history);
     }
+
+    [HttpGet("{movieId}")]
+    public async Task<IActionResult> GetMovieHistory(string movieId)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
+
+        var userId = Guid.Parse(userIdStr);
+        var history = await _watchHistoryService.GetMovieHistoryAsync(userId, movieId);
+        return Ok(history);
+    }
 }

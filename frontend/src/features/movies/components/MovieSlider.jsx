@@ -74,7 +74,7 @@ export default function MovieSlider({ title, movies = [], isLoading = false, noO
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
                     {movies.map((movie, index) => (
-                        <div key={movie._id || movie.slug} className={`snap-start shrink-0 ${!noOverlap ? `${index === 0 ? '' : '-ml-12 md:-ml-16'} ${index % 2 === 0 ? 'translate-y-4' : '-translate-y-4'}` : ''}`}>
+                        <div key={movie._id || movie.slug} className={`w-[140px] md:w-[180px] snap-start shrink-0 ${!noOverlap ? `${index === 0 ? '' : '-ml-10 md:-ml-16'} ${index % 2 === 0 ? 'translate-y-2 md:translate-y-4' : '-translate-y-2 md:-translate-y-4'}` : ''}`}>
                             <MovieCard movie={movie} />
                         </div>
                     ))}

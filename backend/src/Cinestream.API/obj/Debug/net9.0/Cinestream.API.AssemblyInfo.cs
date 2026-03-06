@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Cinestream.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+aa9fb6554c5f42941301e12cac800d37c1611510")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fb6082ed68db62bd1ca46037fce9e3210e41d32c")]
 [assembly: System.Reflection.AssemblyProductAttribute("Cinestream.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Cinestream.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

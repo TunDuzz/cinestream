@@ -199,22 +199,22 @@ export default function SearchPage() {
     }, [keyword, selectedCategory, genreParam, activeFilters, currentPage]);
 
     return (
-        <div className="min-h-screen bg-dark-bg pt-28 pb-20 px-4 md:px-8 max-w-[1800px] mx-auto animate-in fade-in duration-500">
+        <div className="min-h-screen bg-dark-bg pt-28 pb-20 px-4 sm:px-6 md:px-8 lg:px-10 2xl:px-16 max-w-[2560px] mx-auto animate-in fade-in duration-500">
             {/* Search Header */}
             <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-heading font-medium text-white flex flex-wrap items-center gap-3">
+                    <h1 className="text-[clamp(1.5rem,4vw,2.5rem)] font-heading font-medium text-white flex flex-wrap items-center gap-2 sm:gap-3">
                         {keyword ? (
                             <>
-                                Kết quả cho:
-                                <span className="text-primary-yellow font-bold uppercase tracking-wide px-4 py-1.5 bg-white/5 rounded-xl border border-white/10">
+                                <span className="opacity-60">Kết quả cho:</span>
+                                <span className="text-primary-yellow font-bold uppercase tracking-wide px-3 py-1 sm:px-4 sm:py-1.5 bg-white/5 rounded-xl border border-white/10 text-sm sm:text-base">
                                     "{keyword}"
                                 </span>
                             </>
                         ) : selectedCategory ? (
                             <>
-                                Thể loại:
-                                <span className="text-primary-yellow font-bold uppercase tracking-wide px-4 py-1.5 bg-white/5 rounded-xl border border-white/10">
+                                <span className="opacity-60">Thể loại:</span>
+                                <span className="text-primary-yellow font-bold uppercase tracking-wide px-3 py-1 sm:px-4 sm:py-1.5 bg-white/5 rounded-xl border border-white/10 text-sm sm:text-base">
                                     {categories.find(c => c.slug === selectedCategory)?.name || selectedCategory}
                                 </span>
                             </>
@@ -228,7 +228,7 @@ export default function SearchPage() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 mt-4 md:mt-0">
                     {/* Clear Quick Filters button - Only if something is active */}
                     {(selectedCategory || Object.values(activeFilters).some(v => v)) && (
                         <button
@@ -239,7 +239,7 @@ export default function SearchPage() {
                                 setStagedFilters({ country: '', year: '', type: '' });
                                 setCurrentPage(1);
                             }}
-                            className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-red-400 transition-colors bg-white/5 border border-white/10"
+                            className="min-h-[44px] px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-red-400 transition-colors bg-white/5 border border-white/10 shrink-0 focus:outline-none focus:ring-2 focus:ring-primary-yellow"
                         >
                             Xóa bộ lọc
                         </button>
@@ -247,12 +247,12 @@ export default function SearchPage() {
 
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl border transition-all duration-300 font-black text-[10px] uppercase tracking-[0.2em] h-max ${showFilters
+                        className={`min-h-[44px] flex items-center justify-center gap-2 px-6 py-2 rounded-xl border transition-all duration-300 font-black text-[10px] uppercase tracking-[0.2em] flex-1 sm:flex-none focus:outline-none focus:ring-2 focus:ring-primary-yellow ${showFilters
                             ? 'bg-primary-yellow text-black border-primary-yellow shadow-[0_10px_30px_-10px_rgba(252,213,63,0.4)]'
                             : 'bg-white/5 text-white border-white/10 hover:bg-white/10'}`}
                     >
                         {showFilters ? <FilterX size={14} /> : <Filter size={14} />}
-                        {showFilters ? 'Đóng bộ lọc' : 'Lọc nâng cao'}
+                        <span>{showFilters ? 'Đóng bộ lọc' : 'Lọc nâng cao'}</span>
                         {Object.values(activeFilters).filter(v => v).length + (selectedCategory ? 1 : 0) > 0 && (
                             <span className={`ml-1 px-1.5 py-0.5 rounded-md text-[9px] ${showFilters ? 'bg-black/20' : 'bg-primary-yellow text-black'}`}>
                                 {Object.values(activeFilters).filter(v => v).length + (selectedCategory ? 1 : 0)}
@@ -273,11 +273,11 @@ export default function SearchPage() {
                     <div className="space-y-6">
                         {/* Row 1: Country */}
                         <div className="flex flex-col md:flex-row md:items-start gap-3 md:gap-8">
-                            <label className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] w-24 pt-1.5 shrink-0">Quốc gia:</label>
-                            <div className="flex flex-wrap gap-2 flex-1">
+                            <label className="text-[10px] sm:text-[11px] font-black text-white/30 uppercase tracking-[0.2em] w-24 pt-0 sm:pt-1.5 shrink-0 opacity-50">Quốc gia:</label>
+                            <div className="flex flex-wrap gap-1.5 sm:gap-2 flex-1">
                                 <button
                                     onClick={() => setStagedFilters(prev => ({ ...prev, country: '' }))}
-                                    className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all border ${!stagedFilters.country ? 'border-primary-yellow text-primary-yellow bg-primary-yellow/5' : 'border-white/5 text-white/40 hover:text-white/70 hover:bg-white/5'}`}
+                                    className={`px-3 sm:px-4 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all border ${!stagedFilters.country ? 'border-primary-yellow text-primary-yellow bg-primary-yellow/5' : 'border-white/5 text-white/40 hover:text-white/70 hover:bg-white/5'}`}
                                 >
                                     Tất cả
                                 </button>
@@ -285,7 +285,7 @@ export default function SearchPage() {
                                     <button
                                         key={c.slug}
                                         onClick={() => setStagedFilters(prev => ({ ...prev, country: c.slug }))}
-                                        className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all border ${stagedFilters.country === c.slug ? 'border-primary-yellow text-primary-yellow bg-primary-yellow/5' : 'border-white/5 text-white/40 hover:text-white/70 hover:bg-white/5'}`}
+                                        className={`px-3 sm:px-4 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all border ${stagedFilters.country === c.slug ? 'border-primary-yellow text-primary-yellow bg-primary-yellow/5' : 'border-white/5 text-white/40 hover:text-white/70 hover:bg-white/5'}`}
                                     >
                                         {c.name}
                                     </button>
@@ -295,8 +295,8 @@ export default function SearchPage() {
 
                         {/* Row 2: Type */}
                         <div className="flex flex-col md:flex-row md:items-start gap-3 md:gap-8">
-                            <label className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] w-24 pt-1.5 shrink-0">Loại phim:</label>
-                            <div className="flex flex-wrap gap-2 flex-1">
+                            <label className="text-[10px] sm:text-[11px] font-black text-white/30 uppercase tracking-[0.2em] w-24 pt-0 sm:pt-1.5 shrink-0 opacity-50">Loại phim:</label>
+                            <div className="flex flex-wrap gap-1.5 sm:gap-2 flex-1">
                                 {[
                                     { id: '', label: 'Tất cả' },
                                     { id: 'phim-le', label: 'Phim lẻ' },
@@ -305,7 +305,7 @@ export default function SearchPage() {
                                     <button
                                         key={type.id}
                                         onClick={() => setStagedFilters(prev => ({ ...prev, type: type.id }))}
-                                        className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all border ${stagedFilters.type === type.id ? 'border-primary-yellow text-primary-yellow bg-primary-yellow/5' : 'border-white/5 text-white/40 hover:text-white/70 hover:bg-white/5'}`}
+                                        className={`px-3 sm:px-4 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all border ${stagedFilters.type === type.id ? 'border-primary-yellow text-primary-yellow bg-primary-yellow/5' : 'border-white/5 text-white/40 hover:text-white/70 hover:bg-white/5'}`}
                                     >
                                         {type.label}
                                     </button>
@@ -315,11 +315,11 @@ export default function SearchPage() {
 
                         {/* Row 3: Genre */}
                         <div className="flex flex-col md:flex-row md:items-start gap-3 md:gap-8">
-                            <label className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] w-24 pt-1.5 shrink-0">Thể loại:</label>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-2 flex-1">
+                            <label className="text-[10px] sm:text-[11px] font-black text-white/30 uppercase tracking-[0.2em] w-24 pt-0 sm:pt-1.5 shrink-0 opacity-50">Thể loại:</label>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-1.5 sm:gap-2 flex-1">
                                 <button
                                     onClick={() => setStagedCategory(null)}
-                                    className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all border text-center ${!stagedCategory ? 'border-primary-yellow text-primary-yellow bg-primary-yellow/5' : 'border-white/5 text-white/40 hover:text-white/70 hover:bg-white/5'}`}
+                                    className={`px-3 sm:px-4 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all border text-center ${!stagedCategory ? 'border-primary-yellow text-primary-yellow bg-primary-yellow/5' : 'border-white/5 text-white/40 hover:text-white/70 hover:bg-white/5'}`}
                                 >
                                     Tất cả
                                 </button>
@@ -327,7 +327,7 @@ export default function SearchPage() {
                                     <button
                                         key={cat.slug}
                                         onClick={() => setStagedCategory(cat.slug)}
-                                        className={`px-4 py-1.5 rounded-xl text-xs font-bold truncate transition-all border text-center ${stagedCategory === cat.slug ? 'border-primary-yellow text-primary-yellow bg-primary-yellow/5' : 'border-white/5 text-white/40 hover:text-white/70 hover:bg-white/5'}`}
+                                        className={`px-3 sm:px-4 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold truncate transition-all border text-center ${stagedCategory === cat.slug ? 'border-primary-yellow text-primary-yellow bg-primary-yellow/5' : 'border-white/5 text-white/40 hover:text-white/70 hover:bg-white/5'}`}
                                     >
                                         {cat.name}
                                     </button>
@@ -337,11 +337,11 @@ export default function SearchPage() {
 
                         {/* Row 4: Year */}
                         <div className="flex flex-col md:flex-row md:items-start gap-3 md:gap-8">
-                            <label className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] w-24 pt-1.5 shrink-0">Năm sản xuất:</label>
-                            <div className="flex flex-wrap gap-2 flex-1">
+                            <label className="text-[10px] sm:text-[11px] font-black text-white/30 uppercase tracking-[0.2em] w-24 pt-0 sm:pt-1.5 shrink-0 opacity-50">Năm sản xuất:</label>
+                            <div className="flex flex-wrap gap-1.5 sm:gap-2 flex-1">
                                 <button
                                     onClick={() => setStagedFilters(prev => ({ ...prev, year: '' }))}
-                                    className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all border ${!stagedFilters.year ? 'border-primary-yellow text-primary-yellow bg-primary-yellow/5' : 'border-white/5 text-white/40 hover:text-white/70 hover:bg-white/5'}`}
+                                    className={`px-3 sm:px-4 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all border ${!stagedFilters.year ? 'border-primary-yellow text-primary-yellow bg-primary-yellow/5' : 'border-white/5 text-white/40 hover:text-white/70 hover:bg-white/5'}`}
                                 >
                                     Tất cả
                                 </button>
@@ -349,7 +349,7 @@ export default function SearchPage() {
                                     <button
                                         key={yr}
                                         onClick={() => setStagedFilters(prev => ({ ...prev, year: yr.toString() }))}
-                                        className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all border ${stagedFilters.year === yr.toString() ? 'border-primary-yellow text-primary-yellow bg-primary-yellow/5' : 'border-white/5 text-white/40 hover:text-white/70 hover:bg-white/5'}`}
+                                        className={`px-3 sm:px-4 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all border ${stagedFilters.year === yr.toString() ? 'border-primary-yellow text-primary-yellow bg-primary-yellow/5' : 'border-white/5 text-white/40 hover:text-white/70 hover:bg-white/5'}`}
                                     >
                                         {yr}
                                     </button>
@@ -359,10 +359,10 @@ export default function SearchPage() {
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="flex items-center gap-4 mt-8 pt-6 border-t border-white/5">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mt-8 pt-6 border-t border-white/5">
                         <button
                             onClick={handleApplyFilters}
-                            className="group relative flex items-center gap-3 px-8 py-3 rounded-full bg-primary-yellow text-black font-black text-[11px] uppercase tracking-[0.2em] overflow-hidden shadow-[0_20px_40px_-10px_rgba(252,213,63,0.3)] hover:scale-105 transition-all duration-300"
+                            className="min-h-[44px] group relative flex items-center justify-center gap-3 px-8 py-3 rounded-full bg-primary-yellow text-black font-black text-[11px] uppercase tracking-[0.2em] overflow-hidden shadow-[0_20px_40px_-10px_rgba(252,213,63,0.3)] hover:scale-105 focus:outline-none focus:ring-4 focus:ring-primary-yellow/50 transition-all duration-300 flex-1"
                         >
                             <span className="relative z-10">Lọc kết quả</span>
                             <ChevronRight size={16} className="relative z-10 group-hover:translate-x-1 transition-transform" />
@@ -371,7 +371,7 @@ export default function SearchPage() {
 
                         <button
                             onClick={() => setShowFilters(false)}
-                            className="px-8 py-3 rounded-full border border-white/20 text-white font-black text-[11px] uppercase tracking-[0.2em] hover:bg-white/5 transition-all"
+                            className="min-h-[44px] px-8 py-3 rounded-full border border-white/20 text-white font-black text-[11px] uppercase tracking-[0.2em] hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white transition-all flex-1 sm:flex-none"
                         >
                             Đóng
                         </button>
@@ -387,7 +387,7 @@ export default function SearchPage() {
             ) : results.length > 0 ? (
                 /* Results Grid */
                 <div className="space-y-12">
-                    <div className="grid grid-cols-2 mx-auto sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4 md:gap-6">
+                    <div className="grid grid-cols-2 mx-auto sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 3xl:grid-cols-10 gap-3 sm:gap-4 md:gap-6">
                         {results.map((movie) => (
                             <div key={movie.slug} className="flex justify-center w-full">
                                 <MovieCard movie={movie} />
@@ -397,18 +397,18 @@ export default function SearchPage() {
 
                     {/* Custom Arrow-based Pagination */}
                     {paginationData && paginationData.totalPages > 1 && (
-                        <div className="flex justify-center items-center gap-6 pb-20 mt-20">
+                        <div className="flex justify-center items-center gap-3 sm:gap-6 pb-20 mt-12 sm:mt-20">
                             <button
                                 disabled={currentPage === 1}
                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all bg-[#1a1b23] border border-white/5 ${currentPage === 1 ? 'opacity-20 cursor-not-allowed' : 'hover:bg-white/10 hover:border-white/20 active:scale-90 text-white shadow-xl'}`}
+                                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all bg-[#1a1b23] border border-white/5 shrink-0 ${currentPage === 1 ? 'opacity-20 cursor-not-allowed' : 'hover:bg-white/10 hover:border-white/20 active:scale-90 text-white shadow-xl'}`}
                             >
                                 <ChevronLeft size={20} />
                             </button>
 
-                            <div className="px-8 py-3 rounded-full bg-[#1a1b23] border border-white/5 flex items-center gap-4 shadow-xl">
-                                <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Trang</span>
-                                <div className="flex items-baseline gap-3">
+                            <div className="px-4 sm:px-8 py-2.5 sm:py-3 rounded-full bg-[#1a1b23] border border-white/5 flex items-center gap-3 sm:gap-4 shadow-xl">
+                                <span className="text-[9px] sm:text-[10px] font-black text-white/30 uppercase tracking-[0.2em] sm:tracking-[0.3em] hidden xs:inline">Trang</span>
+                                <div className="flex items-baseline gap-2 sm:gap-3">
                                     <input
                                         type="text"
                                         value={inputPage}
@@ -424,17 +424,17 @@ export default function SearchPage() {
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') e.target.blur();
                                         }}
-                                        className="w-12 h-10 rounded-xl bg-white/5 border border-white/10 text-center text-sm font-black text-primary-yellow shadow-inner outline-none focus:border-primary-yellow/50 focus:bg-white/10 transition-all"
+                                        className="w-10 sm:w-12 h-8 sm:h-10 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-center text-xs sm:text-sm font-black text-primary-yellow shadow-inner outline-none focus:border-primary-yellow/50 focus:bg-white/10 transition-all"
                                     />
                                     <span className="text-white/20 font-bold">/</span>
-                                    <span className="text-sm font-black text-white/60">{paginationData.totalPages}</span>
+                                    <span className="text-xs sm:text-sm font-black text-white/60">{paginationData.totalPages}</span>
                                 </div>
                             </div>
 
                             <button
                                 disabled={currentPage === paginationData.totalPages}
                                 onClick={() => setCurrentPage(p => Math.min(paginationData.totalPages, p + 1))}
-                                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all bg-[#1a1b23] border border-white/5 ${currentPage === paginationData.totalPages ? 'opacity-20 cursor-not-allowed' : 'hover:bg-white/10 hover:border-white/20 active:scale-90 text-white shadow-xl'}`}
+                                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all bg-[#1a1b23] border border-white/5 shrink-0 ${currentPage === paginationData.totalPages ? 'opacity-20 cursor-not-allowed' : 'hover:bg-white/10 hover:border-white/20 active:scale-90 text-white shadow-xl'}`}
                             >
                                 <ChevronRight size={20} />
                             </button>

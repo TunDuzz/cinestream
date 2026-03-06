@@ -56,18 +56,13 @@ export default function HeroSection({ movies = [] }) {
             badges.push(<span key="year" className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded border border-white/5">{movie.year}</span>);
         }
 
-        // 3. Phim Lẻ vs Phim Bộ logic
         if (movie.type === 'single') {
-            // Phim Lẻ: Show Duration, remove ep count
             if (movie.time) {
                 badges.push(<span key="time" className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded border border-white/5">{movie.time}</span>);
             }
         } else {
-            // Phim Bộ: Parts & Episodes
-            // Default "Phần 1" if it's a series
             badges.push(<span key="part" className="bg-white/10 backdrop-blur-md px-2 py-0.5 rounded border border-white/5">Phần 1</span>);
 
-            // Episode status
             let epText = movie.episodeCurrent || "";
             const isCompleted = epText.toLowerCase().includes('full') || epText.toLowerCase().includes('hoàn tất');
 
@@ -131,16 +126,20 @@ export default function HeroSection({ movies = [] }) {
                             </div>
 
                             {/* Hero Content */}
-                            <div className="relative z-10 w-full max-w-[1800px] mx-auto px-4 md:px-8 h-full flex flex-col pt-28 pb-20 md:pb-28">
-                                <div className="w-[95%] md:w-3/4 lg:w-1/2 flex flex-col items-start gap-4 mt-auto">
+                            <div className="relative z-10 w-full max-w-[2560px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 2xl:px-16 h-full flex flex-col justify-end pb-12 md:pb-20">
+                                <div className="w-[95%] md:w-3/4 lg:w-1/2 flex flex-col items-start gap-3">
 
-                                    <h1 className="font-heading text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-white drop-shadow-2xl leading-tight line-clamp-2">
-                                        {displayMovie.name}
-                                    </h1>
+                                    <div className="min-h-[2.4em] md:min-h-[2.6em] flex items-end">
+                                        <h1 className="font-heading text-[clamp(2rem,5vw,4rem)] font-bold tracking-tight text-white drop-shadow-2xl leading-[1.1] line-clamp-2">
+                                            {displayMovie.name}
+                                        </h1>
+                                    </div>
 
-                                    <h2 className="text-xs md:text-sm font-light text-primary-yellow drop-shadow-md line-clamp-1">
-                                        {displayMovie.originName || displayMovie.name}
-                                    </h2>
+                                    <div className="min-h-[1.2em] md:min-h-[1.5em] flex items-center">
+                                        <h2 className="text-[clamp(0.875rem,1.5vw,1.25rem)] font-light text-primary-yellow drop-shadow-md line-clamp-1">
+                                            {displayMovie.originName || displayMovie.name}
+                                        </h2>
+                                    </div>
 
                                     {/* Badges Row */}
                                     {renderBadges(displayMovie)}
@@ -150,7 +149,7 @@ export default function HeroSection({ movies = [] }) {
                                         {displayMovie.categories && displayMovie.categories.length > 0 && (
                                             <div className="flex flex-wrap items-center gap-2">
                                                 {displayMovie.categories.map((cat, idx) => (
-                                                    <span key={idx} className="bg-white/5 hover:bg-white/10 backdrop-blur-md text-gray-300 px-3 py-1 rounded-full text-[11px] md:text-xs transition-colors cursor-pointer border border-white/5">
+                                                    <span key={idx} className="bg-white/5 hover:bg-white/10 backdrop-blur-md text-gray-300 min-h-[44px] inline-flex items-center px-4 rounded-full text-[clamp(0.75rem,1vw,0.875rem)] transition-colors cursor-pointer border border-white/5">
                                                         {cat}
                                                     </span>
                                                 ))}
@@ -158,9 +157,9 @@ export default function HeroSection({ movies = [] }) {
                                         )}
                                     </div>
 
-                                    {/* Synopsis - Fixed Height to prevent jump */}
-                                    <div className="min-h-[36px] md:min-h-[54px] mt-1">
-                                        <p className="text-[11px] md:text-xs text-gray-400 leading-relaxed max-w-lg line-clamp-2 md:line-clamp-3">
+                                    {/* Synopsis - Fixed Height (for 3 lines) to prevent jump */}
+                                    <div className="min-h-[60px] md:min-h-[85px] mt-2">
+                                        <p className="text-[clamp(0.875rem,1.2vw,1.125rem)] text-gray-400 leading-relaxed max-w-lg line-clamp-2 md:line-clamp-3">
                                             {displayMovie.content}
                                         </p>
                                     </div>
@@ -170,16 +169,17 @@ export default function HeroSection({ movies = [] }) {
                                         {!isAdmin && (
                                             <Link
                                                 to={`/watch/${displayMovie.id}`}
-                                                className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-full bg-primary-yellow text-black hover:scale-105 hover:bg-primary-yellow-hover transition-all shadow-[0_0_30px_rgba(252,213,63,0.3)]"
+                                                tabIndex={0}
+                                                className="flex items-center justify-center min-h-[44px] min-w-[44px] w-14 h-14 md:w-16 md:h-16 rounded-full bg-primary-yellow text-black hover:scale-105 hover:bg-primary-yellow-hover transition-all shadow-[0_0_30px_rgba(252,213,63,0.3)] focus:outline-none focus:ring-4 focus:ring-white"
                                             >
                                                 <Play fill="currentColor" size={24} className="ml-1" />
                                             </Link>
                                         )}
 
-                                        <button className="flex items-center justify-center w-12 h-12 rounded-full glass-panel hover:bg-white/10 transition-colors text-white">
+                                        <button tabIndex={0} className="flex items-center justify-center min-h-[44px] min-w-[44px] w-12 h-12 rounded-full glass-panel hover:bg-white/10 transition-colors text-white focus:outline-none focus:ring-2 focus:ring-primary-yellow">
                                             <Heart size={20} />
                                         </button>
-                                        <button className="flex items-center justify-center w-12 h-12 rounded-full glass-panel hover:bg-white/10 transition-colors text-white">
+                                        <button tabIndex={0} className="flex items-center justify-center min-h-[44px] min-w-[44px] w-12 h-12 rounded-full glass-panel hover:bg-white/10 transition-colors text-white focus:outline-none focus:ring-2 focus:ring-primary-yellow">
                                             <AlertCircle size={20} />
                                         </button>
                                     </div>

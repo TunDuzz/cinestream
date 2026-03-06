@@ -9,5 +9,6 @@ public interface IUserRepository
     Task<IEnumerable<User>> GetAllAsync();
     Task AddAsync(User user);
     Task UpdateAsync(User user);
+    Task<int> CountUsersByIpAsync(string ipAddress);
     Task DeleteAsync(Guid id);
 }
