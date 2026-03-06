@@ -11,6 +11,7 @@ public class User
     public string? AvatarUrl { get; set; }
     public string? RefreshTokenHash { get; set; }
     public DateTime? RefreshTokenExpiry { get; set; }
+    public string? CreatedIpAddress { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public UserRole Role { get; set; } = UserRole.User;

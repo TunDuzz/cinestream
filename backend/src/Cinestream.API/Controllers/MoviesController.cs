@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Cinestream.Application.Interfaces.Services;
 using System.Net.Http.Headers;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Cinestream.API.Controllers;
 
@@ -20,6 +21,7 @@ public class MoviesController : ControllerBase
     }
 
     [HttpGet("latest")]
+    [OutputCache(Duration = 600)]
     public async Task<IActionResult> GetLatestMovies([FromQuery] int page = 1)
     {
         var result = await _movieService.GetNewMoviesAsync(page);
@@ -28,6 +30,7 @@ public class MoviesController : ControllerBase
     }
 
     [HttpGet("detail/{slug}")]
+    [OutputCache(Duration = 600)]
     public async Task<IActionResult> GetMovieDetail(string slug)
     {
         var result = await _movieService.GetMovieDetailAsync(slug);
@@ -36,6 +39,7 @@ public class MoviesController : ControllerBase
     }
 
     [HttpGet("type/{type}")]
+    [OutputCache(Duration = 600)]
     public async Task<IActionResult> GetMoviesByType(string type, [FromQuery] int page = 1, [FromQuery] string? category = null, [FromQuery] string? country = null, [FromQuery] int? year = null)
     {
         var result = await _movieService.GetMoviesByTypeAsync(type, page, category, country, year);
@@ -58,6 +62,7 @@ public class MoviesController : ControllerBase
     }
 
     [HttpGet("category/{slug}")]
+    [OutputCache(Duration = 600)]
     public async Task<IActionResult> GetMoviesByCategory(string slug, [FromQuery] int page = 1, [FromQuery] string? country = null, [FromQuery] int? year = null)
     {
         var result = await _movieService.GetMoviesByCategoryAsync(slug, page, country, year);
@@ -66,6 +71,7 @@ public class MoviesController : ControllerBase
     }
 
     [HttpGet("country/{slug}")]
+    [OutputCache(Duration = 600)]
     public async Task<IActionResult> GetMoviesByCountry(string slug, [FromQuery] int page = 1, [FromQuery] string? category = null, [FromQuery] int? year = null)
     {
         var result = await _movieService.GetMoviesByCountryAsync(slug, page, category, year);
@@ -74,6 +80,7 @@ public class MoviesController : ControllerBase
     }
 
     [HttpGet("categories")]
+    [OutputCache(Duration = 600)]
     public async Task<IActionResult> GetCategories()
     {
         var result = await _movieService.GetCategoriesAsync();
@@ -82,6 +89,7 @@ public class MoviesController : ControllerBase
     }
 
     [HttpGet("countries")]
+    [OutputCache(Duration = 600)]
     public async Task<IActionResult> GetCountries()
     {
         var result = await _movieService.GetCountriesAsync();
@@ -94,6 +102,7 @@ public class MoviesController : ControllerBase
     /// Requires TmdbApi:ApiKey to be set in appsettings.
     /// </summary>
     [HttpGet("credits/{tmdbId}")]
+    [OutputCache(Duration = 600)]
     public async Task<IActionResult> GetMovieCredits(string tmdbId, [FromQuery] string mediaType = "movie")
     {
         var apiKey = _configuration["TmdbApi:ApiKey"];

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Cinestream.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+13b181794e15126c369b984042797d09df69275d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fb6082ed68db62bd1ca46037fce9e3210e41d32c")]
 [assembly: System.Reflection.AssemblyProductAttribute("Cinestream.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Cinestream.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

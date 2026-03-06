@@ -29,6 +29,16 @@ const AdminDashboard = () => {
         fetchStats();
     }, []);
 
+    // Calculate real % growth: (this - prev) / prev * 100
+    const calcGrowth = (current, previous) => {
+        if (previous === 0) return current > 0 ? { trend: 'up', label: '+100%' } : { trend: 'up', label: '+0%' };
+        const pct = ((current - previous) / previous) * 100;
+        return {
+            trend: pct >= 0 ? 'up' : 'down',
+            label: `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`
+        };
+    };
+
     const StatCard = ({ icon: Icon, label, value, trend, trendValue, color }) => (
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
             <div className={`absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 rounded-full opacity-[0.03] group-hover:scale-110 transition-transform duration-500 bg-current text-${color}-600`}></div>
@@ -77,38 +87,52 @@ const AdminDashboard = () => {
 
             {/* Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard
-                    icon={Users}
-                    label="Tổng người dùng"
-                    value={stats?.totalUsers || 0}
-                    trend="up"
-                    trendValue="+12%"
-                    color="indigo"
-                />
-                <StatCard
-                    icon={Eye}
-                    label="Lượt xem"
-                    value={stats?.totalViews || 0}
-                    trend="up"
-                    trendValue="+25%"
-                    color="sky"
-                />
-                <StatCard
-                    icon={Heart}
-                    label="Lượt yêu thích"
-                    value={stats?.totalFavorites || 0}
-                    trend="down"
-                    trendValue="-3%"
-                    color="rose"
-                />
-                <StatCard
-                    icon={TrendingUp}
-                    label="Tỉ lệ hoạt động"
-                    value={stats?.totalUsers ? `${((stats.activeUserCount / stats.totalUsers) * 100).toFixed(1)}%` : '0%'}
-                    trend="up"
-                    trendValue="+8%"
-                    color="emerald"
-                />
+                {(() => {
+                    const userGrowth = calcGrowth(stats?.newUsersThisWeek ?? 0, stats?.newUsersPrevWeek ?? 0);
+                    const viewGrowth = calcGrowth(stats?.viewsThisWeek ?? 0, stats?.viewsPrevWeek ?? 0);
+                    const favGrowth = calcGrowth(stats?.favoritesThisWeek ?? 0, stats?.favoritesPrevWeek ?? 0);
+                    const activeRate = stats?.totalUsers
+                        ? ((stats.activeUserCount / stats.totalUsers) * 100).toFixed(1)
+                        : 0;
+                    // Active rate: compare active users this week vs prev week
+                    const activeGrowth = calcGrowth(stats?.viewsThisWeek ?? 0, stats?.viewsPrevWeek ?? 0);
+                    return (
+                        <>
+                            <StatCard
+                                icon={Users}
+                                label="Tổng người dùng"
+                                value={stats?.totalUsers || 0}
+                                trend={userGrowth.trend}
+                                trendValue={userGrowth.label}
+                                color="indigo"
+                            />
+                            <StatCard
+                                icon={Eye}
+                                label="Lượt xem"
+                                value={stats?.totalViews || 0}
+                                trend={viewGrowth.trend}
+                                trendValue={viewGrowth.label}
+                                color="sky"
+                            />
+                            <StatCard
+                                icon={Heart}
+                                label="Lượt yêu thích"
+                                value={stats?.totalFavorites || 0}
+                                trend={favGrowth.trend}
+                                trendValue={favGrowth.label}
+                                color="rose"
+                            />
+                            <StatCard
+                                icon={TrendingUp}
+                                label="Tỉ lệ hoạt động"
+                                value={`${activeRate}%`}
+                                trend={activeGrowth.trend}
+                                trendValue={activeGrowth.label}
+                                color="emerald"
+                            />
+                        </>
+                    );
+                })()}
             </div>
 
             {/* Charts & Details */}

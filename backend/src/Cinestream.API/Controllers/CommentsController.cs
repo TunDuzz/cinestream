@@ -5,6 +5,9 @@ using Cinestream.Application.DTOs.Comment;
 using Cinestream.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Cinestream.API.Controllers;
 
@@ -49,8 +52,7 @@ public class CommentsController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    // Note: Rate limiting is better handled with proper middleware `[EnableRateLimiting("CommentPolicy")]`
-    // but requires registration in Program.cs. We'll simplify for now, unless rate limiter is already set up.
+    [EnableRateLimiting("StrictPolicy")]
     public async Task<IActionResult> CreateComment(string movieId, [FromBody] CreateCommentRequest request)
     {
         if (!ModelState.IsValid)
@@ -64,6 +66,7 @@ public class CommentsController : ControllerBase
 
     [HttpPut("/api/comments/{id}")]
     [Authorize]
+    [EnableRateLimiting("StrictPolicy")]
     public async Task<IActionResult> UpdateComment(Guid id, [FromBody] UpdateCommentRequest request)
     {
         if (!ModelState.IsValid)
@@ -88,6 +91,7 @@ public class CommentsController : ControllerBase
 
     [HttpDelete("/api/comments/{id}")]
     [Authorize]
+    [EnableRateLimiting("StrictPolicy")]
     public async Task<IActionResult> DeleteComment(Guid id)
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -113,6 +117,7 @@ public class CommentsController : ControllerBase
 
     [HttpPost("/api/comments/{id}/react")]
     [Authorize]
+    [EnableRateLimiting("StrictPolicy")]
     public async Task<IActionResult> ReactToComment(Guid id, [FromBody] CommentReactionRequest request)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);

@@ -1,7 +1,7 @@
 using Cinestream.Application.DTOs.Auth;
 using Cinestream.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
-
+using Microsoft.AspNetCore.RateLimiting;
 namespace Cinestream.API.Controllers;
 
 [Route("api/[controller]")]
@@ -16,10 +16,18 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting("AuthPolicy")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         try
         {
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+            if (Request.Headers.TryGetValue("X-Forwarded-For", out var forwardedFor))
+            {
+                ipAddress = forwardedFor.FirstOrDefault()?.Split(',').FirstOrDefault()?.Trim() ?? ipAddress;
+            }
+            request.IpAddress = ipAddress;
+
             var response = await _authService.RegisterAsync(request);
             return Ok(response);
         }
@@ -30,6 +38,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("AuthPolicy")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         try
