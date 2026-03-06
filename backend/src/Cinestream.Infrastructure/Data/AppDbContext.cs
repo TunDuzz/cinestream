@@ -20,6 +20,10 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(builder);
 
+        builder.Entity<User>()
+            .Property(u => u.CreatedIpAddress)
+            .HasMaxLength(45);
+
         builder.Entity<WatchHistory>()
             .HasOne(w => w.User)
             .WithMany(u => u.WatchHistories)
@@ -31,7 +35,7 @@ public class AppDbContext : DbContext
             .WithMany(u => u.Favorites)
             .HasForeignKey(f => f.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-            
+
         builder.Entity<Favorite>()
             .HasIndex(f => new { f.UserId, f.MovieId }).IsUnique();
 
@@ -59,13 +63,13 @@ public class AppDbContext : DbContext
             .HasOne(r => r.User)
             .WithMany(u => u.CommentReactions)
             .HasForeignKey(r => r.UserId)
-            .OnDelete(DeleteBehavior.Cascade); // Set action to Cascade to match the convention for Users
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.Entity<CommentReaction>()
             .HasOne(r => r.Comment)
             .WithMany(c => c.Reactions)
             .HasForeignKey(r => r.CommentId)
-            .OnDelete(DeleteBehavior.Cascade); // Cascade so if comment is hard-deleted, so is the reaction
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.Entity<CommentReaction>()
             .HasIndex(r => new { r.CommentId, r.UserId }).IsUnique();

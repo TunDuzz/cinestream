@@ -199,9 +199,7 @@ D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\Microsoft.Identit
 D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\Microsoft.IdentityModel.Tokens.dll
 D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\Microsoft.OpenApi.dll
 D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\Mono.TextTemplating.dll
-D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\MySqlConnector.dll
 D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\Newtonsoft.Json.dll
-D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\Pomelo.EntityFrameworkCore.MySql.dll
 D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\Swashbuckle.AspNetCore.Swagger.dll
 D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerGen.dll
 D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerUI.dll
@@ -312,3 +310,5 @@ D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\Sprache.dll
 D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\appsettings.example.json
 D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\FluentValidation.dll
 D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\FluentValidation.DependencyInjectionExtensions.dll
+D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\Npgsql.dll
+D:\TEST\cinestream\backend\src\Cinestream.API\bin\Debug\net9.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll

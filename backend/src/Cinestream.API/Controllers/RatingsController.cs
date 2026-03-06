@@ -5,6 +5,9 @@ using Cinestream.Application.DTOs.Rating;
 using Cinestream.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Cinestream.API.Controllers;
 
@@ -31,6 +34,7 @@ public class RatingsController : ControllerBase
 
     [HttpPost]
     [Authorize]
+    [EnableRateLimiting("StrictPolicy")]
     public async Task<IActionResult> CreateOrUpdateRating(string movieId, [FromBody] CreateUpdateRatingRequest request)
     {
         if (!ModelState.IsValid)
