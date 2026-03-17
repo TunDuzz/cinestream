@@ -1,301 +1,219 @@
 # 🎬 CineStream
 
-> A personal learning project — A movie streaming web application built with **.NET 9** (backend) and **React 19** (frontend).
-> Movie data is fetched from the external [Ophim API](https://ophim1.com) and streamed via a custom HLS video player.
+> A premium movie streaming experience built with **.NET 9** and **React 19**, focused on high performance and cinematic UI.
 
 ---
 
-## Table of Contents
-
+## 📋 Table of Contents
 - [Overview](#overview)
 - [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Project Architecture](#project-architecture)
+- [Technology Stack](#technology-stack)
+- [System Architecture](#system-architecture)
 - [Database Schema](#database-schema)
-- [API Reference](#api-reference)
+- [API Documentation](#api-documentation)
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
 - [Notes](#notes)
 
 ---
 
-## Overview
+## 🌟 Overview
+**CineStream** is a modern movie streaming application designed to provide a seamless cinematic experience. It integrates with external movie APIs while maintaining a robust localized system for user management, watch history, and administrative control.
 
-CineStream is a personal project built to practice end-to-end web development, including:
-
-- A **REST API** serving movie data, user authentication, and watch history
-- A **frontend UI** for browsing movies, playing HLS video streams, and managing authentication state
+Built with a scalable **Clean Architecture** backend and a high-performance **React** frontend, CineStream demonstrates modern web development practices including JWT-based security, in-memory caching, and a highly responsive custom video player.
 
 ---
 
-## Features
+## ✨ Features
+
+### 🎞️ Cinematic Experience
+*   **High-Quality HLS Streaming**: Support for adaptive bitrate streaming with quality selector (Auto / 720p / 1080p).
+*   **Custom Video Player**: Built on Video.js with playback speed control (0.5x → 2x) and interactive seek tracking.
+*   **Keyboard Shortcuts**: Advanced player controls (`Space/K` Play/Pause · `L/J` Seek · `F` Fullscreen · `M` Mute · `↑↓` Volume).
+*   **Expansion Previews**: React Portal-based hover cards for instant movie details without leaving the page.
+
+### 👤 User Features
+*   **Smart Watch History**: Automatic tracking of watch progress per episode/movie.
+*   **Personal Library**: Manage favorite movies and access quickly from the profile.
+*   **Advanced Discovery**: Powerful filter panel (Genre, Country, Type, Year) and intelligent search.
+*   **Responsive UI**: Optimized for all devices with a smooth, glassmorphism design.
+
+### 🔐 Security & Auth
+*   **JWT Authentication**: Secure Access + Refresh Token flow.
+*   **Role-Based Access**: Granular control for Admin and User roles.
+*   **Secure Storage**: BCrypt password hashing and Cloudinary integration for images.
+
+### 🛠️ Admin Dashboard
+*   **Real-time Insights**: Overview charts for user activity and popular content.
+*   **User Management**: Full control over user accounts, roles, and security resets.
+*   **System Configuration**: Manage global application settings and API configurations.
+
+---
+
+## 💻 Technology Stack
 
 ### Backend
-- User registration and login with BCrypt password hashing
-- JWT Access Token + Refresh Token authentication flow
-- Role-based authorization (**Admin / User**)
-- Ophim API integration to fetch movies, genres, and countries
-- In-memory caching (`IMemoryCache`) for API responses
-- Watch history tracking per user per episode
-- Image upload to Cloudinary
-- Admin Dashboard statistics (User counts, Top movies, Active views)
-- Global application settings management
-- Clean Architecture (Domain → Application → Infrastructure → API)
-- Repository Pattern for data access layer
+| Component | Technology |
+|:---|:---|
+| **Framework** | ASP.NET Core 9 |
+| **ORM** | Entity Framework Core 9 |
+| **Database** | MySQL 8 (Pomelo) |
+| **Authentication** | JWT Bearer |
+| **Storage** | Cloudinary |
+| **Caching** | IMemoryCache |
 
 ### Frontend
-- Home page with dynamic Hero Section and categorized movie sliders
-- Expanding hover card (React Portal) for quick movie previews
-- Full cinematic watch page:
-  - Server and episode selector
-  - Cast sidebar and movie recommendations
-  - YouTube trailer fallback for upcoming movies
-- Custom HLS video player (video.js):
-  - Quality selector (Auto / 720p / 1080p)
-  - Playback speed control (0.5x → 2x)
-  - Progress bar with buffered track
-  - Keyboard shortcuts: `Space/K` Play/Pause · `L/J` Seek · `F` Fullscreen · `M` Mute · `↑↓` Volume
-- Advanced movie search with filter panel (Genre, Country, Type, Year)
-- Admin Dashboard UI:
-  - Overview statistics charts
-  - User management table (Role modification, Password reset, Deletion)
-- Glassmorphism floating navbar with dynamic Genre, Country, and List dropdowns
-- Login / Register with persistent auth state (Zustand + localStorage)
+| Component | Technology |
+|:---|:---|
+| **Framework** | React 19 + Vite |
+| **Styling** | Tailwind CSS v4 |
+| **State** | Zustand |
+| **HTTP Client** | Axios |
+| **Player** | Video.js + HLS Plugin |
+| **Icons** | Lucide React |
 
 ---
 
-## Tech Stack
+## 🏗️ System Architecture
 
-### Backend
+CineStream follows **Clean Architecture** and **Repository Pattern** to ensure maintainability and testability.
 
-| Component | Technology |
-|-----------|-----------|
-| Framework | ASP.NET Core 9 |
-| ORM | Entity Framework Core 9 |
-| Database | MySQL 8 (Pomelo.EntityFrameworkCore.MySql) |
-| Authentication | JWT Bearer (System.IdentityModel.Tokens.Jwt) |
-| Password Hashing | BCrypt.Net-Next |
-| Cloud Storage | CloudinaryDotNet |
-| Caching | IMemoryCache |
-| Architecture | Clean Architecture + Repository Pattern |
-
-### Frontend
-
-| Component | Technology |
-|-----------|-----------|
-| Framework | React 19 + Vite |
-| Styling | Tailwind CSS v4 |
-| State Management | Zustand |
-| HTTP Client | Axios |
-| Video Player | video.js + videojs-contrib-quality-levels |
-| Icons | Lucide React |
-| Routing | React Router v7 |
-
----
-
-## Project Architecture
-
-```
+### Project Structure
+```bash
 cinestream/
-├── backend/
-│   └── src/
-│       ├── Cinestream.Domain/              # Domain layer — pure entities, no dependencies
-│       │   └── Entities/
-│       │       ├── User.cs
-│       │       ├── WatchHistory.cs
-│       │       └── Favorite.cs
-│       │
-│       ├── Cinestream.Application/         # Application layer — interfaces, DTOs, contracts
-│       │   ├── DTOs/
-│       │   │   ├── Auth/                   # RegisterRequest, LoginRequest, AuthResponse, RefreshRequest
-│       │   │   ├── MovieApi/               # MovieListResponse, MovieDetailResponse, PaginationDto, CategoryDTO...
-│       │   │   └── WatchHistory/           # WatchHistoryDto
-│       │   └── Interfaces/
-│       │       ├── Services/               # IAuthService, IMovieService, IWatchHistoryService, ICloudinaryService
-│       │       ├── Repositories/           # IUserRepository, IWatchHistoryRepository, IFavoriteRepository
-│       │       └── Common/                 # IJwtTokenGenerator, IPasswordHasher
-│       │
-│       ├── Cinestream.Infrastructure/      # Infrastructure layer — concrete implementations
-│       │   ├── Data/
-│       │   │   ├── AppDbContext.cs
-│       │   │   └── Migrations/
-│       │   ├── Services/                   # AuthService, WatchHistoryService
-│       │   ├── Repositories/               # UserRepository, WatchHistoryRepository, FavoriteRepository
-│       │   ├── Common/                     # JwtTokenGenerator, PasswordHasher
-│       │   └── ExternalServices/           # MovieService (Ophim), CloudinaryService
-│       │
-│       └── Cinestream.API/                 # API layer — controllers, DI, middleware
-│           ├── Controllers/
-│           │   ├── AuthController.cs
-│           │   ├── MoviesController.cs
-│           │   ├── WatchHistoryController.cs
-│           │   ├── UploadController.cs
-│           │   ├── AdminController.cs      # New: Admin stats and user management
-│           │   └── SettingsController.cs   # New: Global app settings
-│           ├── appsettings.json            # ⚠️ Not committed — see appsettings.example.json
-│           ├── appsettings.example.json
-│           └── Program.cs
-│
-└── frontend/
-    └── src/
-        ├── app/                            # AppLayout, router config
-        ├── components/
-        │   ├── common/                     # LoadingSpinner
-        │   └── layout/                     # Navbar, NavbarSearch, Footer
-        ├── features/
-        │   ├── movies/
-        │   │   ├── components/             # MovieCard, MovieSlider, HoverDetailPortal
-        │   │   ├── pages/                  # HomePage, SearchPage, WatchPage
-        │   │   └── services/               # movieService.js
-        │   ├── admin/                      # New: Admin feature module
-        │   │   ├── components/             # AdminStats, UserTable
-        │   │   ├── pages/                  # AdminDashboard, UserManagement
-        │   │   └── services/               # adminService.js
-        │   └── player/
-        │       └── components/             # VideoPlayer.jsx
-        ├── store/                          # useAuthStore.js (Zustand)
-        └── utils/                          # axiosClient.js
+├── backend/src/
+│   ├── Cinestream.Domain/          # Core Business Entities
+│   ├── Cinestream.Application/     # Interfaces, DTOs, Use Cases
+│   ├── Cinestream.Infrastructure/  # DB, External API, Repositories
+│   └── Cinestream.API/             # Controllers, DI, Middleware
+└── frontend/src/
+    ├── app/                        # Router & Layout
+    ├── features/                   # Feature-based modules (Admin, Movies, Player)
+    ├── store/                      # Zustand state management
+    └── utils/                      # Axios client & Helpers
 ```
 
 ---
 
-## Database Schema
+## 📊 Database Schema
 
-The database is **MySQL 8**, managed via Entity Framework Core Migrations.
+The system uses **MySQL 8** with a relational schema optimized for performance.
 
-### `Users`
+### 1. `Users`
+| Column | Data Type | Constraint | Description |
+|:---|:---|:---|:---|
+| `Id` | `CHAR(36)` | **PK** | Unique identifier (GUID). |
+| `Email` | `VARCHAR(255)` | NOT NULL, UNIQUE | User login email. |
+| `PasswordHash`| `TEXT` | NOT NULL | BCrypt hashed password. |
+| `DisplayName` | `VARCHAR(100)` | NOT NULL | Display name for UI. |
+| `AvatarUrl` | `TEXT` | NULL | Cloudinary image URL. |
+| `RefreshTokenHash`| `TEXT` | NULL | Hashed refresh token. |
+| `RefreshTokenExpiry`| `DATETIME`| NULL | Token expiration date. |
+| `CreatedIpAddress`| `VARCHAR(45)` | NULL | IP used during registration. |
+| `Role` | `INT` | NOT NULL | 0: User, 1: Admin. |
+| `CreatedAt` | `DATETIME` | NOT NULL | Account creation timestamp. |
+| `UpdatedAt` | `DATETIME` | NOT NULL | Last account update. |
 
-| Column | Type | Constraint | Description |
-|--------|------|------------|-------------|
-| `Id` | `CHAR(36)` | PRIMARY KEY | Auto-generated GUID |
-| `Email` | `VARCHAR(255)` | NOT NULL, UNIQUE | Login email |
-| `PasswordHash` | `TEXT` | NOT NULL | BCrypt hash of the user's password |
-| `DisplayName` | `VARCHAR(100)` | NOT NULL | Display name |
-| `AvatarUrl` | `TEXT` | NULL | Cloudinary image URL |
-| `RefreshTokenHash` | `TEXT` | NULL | Current refresh token value |
-| `RefreshTokenExpiry` | `DATETIME` | NULL | Expiry date of the refresh token |
-| `Role` | `INT` | NOT NULL | User role (0: User, 1: Admin) |
-| `CreatedAt` | `DATETIME` | NOT NULL | Account creation timestamp |
-| `UpdatedAt` | `DATETIME` | NOT NULL | Last update timestamp |
+### 2. `WatchHistories`
+| Column | Data Type | Constraint | Description |
+|:---|:---|:---|:---|
+| `Id` | `INT` | **PK**, AI | Record identifier. |
+| `UserId` | `CHAR(36)` | **FK** | Reference to `Users.Id`. |
+| `MovieId` | `VARCHAR(255)` | NOT NULL | ID from external movie API. |
+| `MovieName` | `VARCHAR(255)` | NOT NULL | Cached movie name. |
+| `MovieSlug` | `VARCHAR(255)` | NOT NULL | Cached movie slug. |
+| `MovieThumbUrl`| `TEXT` | NOT NULL | Cached thumbnail URL. |
+| `Episode` | `VARCHAR(100)` | NULL | Episode name/number. |
+| `WatchedTimeInSeconds`| `INT` | NOT NULL | Current watch progress. |
+| `IsCompleted` | `TINYINT(1)` | NOT NULL | Whether finished. |
+| `LastWatchedAt`| `DATETIME` | NOT NULL | Last update timestamp. |
 
----
+### 3. `Comments`
+| Column | Data Type | Constraint | Description |
+|:---|:---|:---|:---|
+| `Id` | `CHAR(36)` | **PK** | Comment identifier. |
+| `MovieId` | `VARCHAR(255)` | NOT NULL | Movie ID being commented on. |
+| `UserId` | `CHAR(36)` | **FK** | Reference to `Users.Id`. |
+| `Content` | `VARCHAR(1000)`| NOT NULL | Comment text. |
+| `ParentId` | `CHAR(36)` | **FK**, NULL | Reference to parent `Comments.Id`. |
+| `IsSpoiler` | `TINYINT(1)` | NOT NULL | Spoiler flag. |
+| `LikeCount` | `INT` | DEFAULT 0 | Number of likes. |
+| `DislikeCount`| `INT` | DEFAULT 0 | Number of dislikes. |
+| `ReplyCount` | `INT` | DEFAULT 0 | Number of replies. |
+| `CreatedAt` | `DATETIME` | NOT NULL | Creation timestamp. |
+| `UpdatedAt` | `DATETIME` | NOT NULL | Last update. |
 
-### `AppSettings`
+### 4. `MovieRatings`
+| Column | Data Type | Constraint | Description |
+|:---|:---|:---|:---|
+| `Id` | `CHAR(36)` | **PK** | Rating identifier. |
+| `MovieId` | `VARCHAR(255)` | NOT NULL | Movie ID being rated. |
+| `UserId` | `CHAR(36)` | **FK** | Reference to `Users.Id`. |
+| `Score` | `INT` | NOT NULL (1-10)| Rating score. |
+| `CreatedAt` | `DATETIME` | NOT NULL | Creation timestamp. |
+| `UpdatedAt` | `DATETIME` | NOT NULL | Last update. |
 
-| Column | Type | Constraint | Description |
-|--------|------|------------|-------------|
-| `Key` | `VARCHAR(255)` | PRIMARY KEY | Setting identifier |
-| `Value` | `TEXT` | NOT NULL | JSON string of the setting value |
-| `UpdatedAt` | `DATETIME` | NOT NULL | Last update timestamp |
-
----
-
-### `WatchHistories`
-
-| Column | Type | Constraint | Description |
-|--------|------|------------|-------------|
-| `Id` | `INT` | PRIMARY KEY, AUTO_INCREMENT | |
-| `UserId` | `CHAR(36)` | FOREIGN KEY → Users.Id | Owner of the history record |
-| `MovieId` | `VARCHAR(255)` | NOT NULL | Movie slug from Ophim API |
-| `Episode` | `VARCHAR(100)` | NULL | Episode name (null for single movies) |
-| `WatchedTimeInSeconds` | `INT` | NOT NULL | Seconds watched |
-| `IsCompleted` | `TINYINT(1)` | NOT NULL | Whether the episode was fully watched |
-| `LastWatchedAt` | `DATETIME` | NOT NULL | Timestamp of last watch activity |
-
----
-
-### `Favorites`
-
-| Column | Type | Constraint | Description |
-|--------|------|------------|-------------|
-| `Id` | `INT` | PRIMARY KEY, AUTO_INCREMENT | |
-| `UserId` | `CHAR(36)` | FOREIGN KEY → Users.Id | Owner of the favorite record |
-| `MovieId` | `VARCHAR(255)` | NOT NULL | Movie slug from Ophim API |
-| `AddedAt` | `DATETIME` | NOT NULL | Timestamp when the movie was favorited |
-
----
-
-### Relationships
-
-```
-Users (1) ──────< WatchHistories (N)
-Users (1) ──────< Favorites (N)
-```
-
----
-
-## API Reference
-
-### Auth — `/api/auth`
-
-| Method | Endpoint | Request Body | Description | Auth Required |
-|--------|----------|--------------|-------------|:---:|
-| POST | `/register` | `{ email, password, displayName }` | Register a new account | ❌ |
-| POST | `/login` | `{ email, password }` | Login and receive tokens | ❌ |
-| POST | `/refresh` | `{ token, refreshToken }` | Refresh the access token | ❌ |
-
-**Example response from `/login`:**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "base64EncodedRandomBytes...",
-  "displayName": "John Doe",
-  "avatarUrl": null,
-  "email": "john@example.com"
-}
-```
+### 5. `Other Tables`
+*   **`Favorites`**: `Id` (PK), `UserId` (FK), `MovieId`, `AddedAt`.
+*   **`CommentReactions`**: `Id` (PK), `CommentId` (FK), `UserId` (FK), `IsLike` (bool), `CreatedAt`.
+*   **`AppSettings`**: `Key` (PK), `Value` (JSON), `UpdatedAt`.
 
 ---
 
-### Movies — `/api/movies`
+## 🔌 API Documentation
 
-| Method | Endpoint | Query Params | Description | Auth Required |
-|--------|----------|-------------|-------------|:---:|
-| GET | `/new` | `page` | Get latest movies | ❌ |
-| GET | `/detail/{slug}` | — | Get movie detail + episode list | ❌ |
-| GET | `/search` | `keyword`, `page` | Search movies by name | ❌ |
-| GET | `/filter` | `type`, `genre`, `country`, `year`, `page` | Filter movies | ❌ |
-| GET | `/country/{slug}` | `page` | Movies by country | ❌ |
-| GET | `/categories` | — | All genres | ❌ |
-| GET | `/countries` | — | All countries | ❌ |
+### 🔐 Authentication (`/api/auth`)
+| Method | Endpoint | Description |
+|:---|:---|:---|
+| `POST` | `/register` | Register a new user account. |
+| `POST` | `/login` | Login and receive JWT + Refresh tokens. |
+| `POST` | `/refresh-token`| Obtain new access token using refresh token. |
 
----
+### 🎬 Movies (`/api/movies`)
+| Method | Endpoint | Description |
+|:---|:---|:---|
+| `GET` | `/latest` | Get latest released movies (paginated). |
+| `GET` | `/detail/{slug}`| Get full movie details and episodes. |
+| `GET` | `/type/{type}` | Filter movies by type (series, movie, etc). |
+| `GET` | `/search` | Search movies with keywords and filters. |
+| `GET` | `/category/{slug}`| Get movies belonging to a specific genre. |
+| `GET` | `/country/{slug}` | Get movies from a specific country. |
+| `GET` | `/categories` | List all available genres. |
+| `GET` | `/countries` | List all available countries. |
+| `GET` | `/credits/{id}` | Get real actor profiles (vía TMDB Proxy). |
 
-### Watch History — `/api/watch-history`
+### 💬 Comments (`/api/movies/{movieId}/comments`)
+| Method | Endpoint | Description |
+|:---|:---|:---|
+| `GET` | `/` | Get comments for a movie (paged). |
+| `GET` | `/{parentId}/replies`| Get replies for a specific comment. |
+| `POST` | `/` | Post a new comment (Auth required). |
+| `PUT` | `/comments/{id}` | Update comment content (Owner only). |
+| `DELETE`| `/comments/{id}` | Remove a comment (Owner/Admin). |
+| `POST` | `/comments/{id}/react`| Like/Dislike a comment. |
 
-| Method | Endpoint | Request Body | Description | Auth Required |
-|--------|----------|--------------|-------------|:---:|
-| GET | `/` | — | Get current user's watch history | ✅ JWT |
-| POST | `/` | `{ movieId, episode, watchedTimeInSeconds, isCompleted }` | Save watch progress | ✅ JWT |
+### ⭐ Ratings (`/api/movies/{movieId}/ratings`)
+| Method | Endpoint | Description |
+|:---|:---|:---|
+| `GET` | `/` | Get rating statistics and user's score. |
+| `POST` | `/` | Submit/Update a movie rating (1-10). |
 
----
+### 🕒 Watch History (`/api/watch-history`)
+| Method | Endpoint | Description |
+|:---|:---|:---|
+| `GET` | `/` | Get current user's watch history. |
+| `GET` | `/{movieId}` | Get history for a specific movie. |
+| `POST` | `/` | Save current playback progress. |
 
-### Admin — `/api/admin`
-
-| Method | Endpoint | Request Body | Description | Auth Required |
-|--------|----------|--------------|-------------|:---:|
-| GET | `/stats` | — | Get overall application statistics | ✅ Admin |
-| GET | `/users` | — | Get all users (admin view) | ✅ Admin |
-| PUT | `/users/{id}/role` | `{ role }` | Update user role | ✅ Admin |
-| PUT | `/users/{id}/password` | `{ newPassword }` | Admin-forced password reset | ✅ Admin |
-| DELETE | `/users/{id}` | — | Delete a user | ✅ Admin |
-
----
-
-### Settings — `/api/settings`
-
-| Method | Endpoint | Request Body | Description | Auth Required |
-|--------|----------|--------------|-------------|:---:|
-| GET | `/{key}` | — | Get a global setting value | ❌ |
-| PUT | `/{key}` | `object` | Update a global setting | ✅ Admin |
-
----
-
-### Upload — `/api/upload`
-
-| Method | Endpoint | Request Body | Description | Auth Required |
-|--------|----------|--------------|-------------|:---:|
-| POST | `/` | `multipart/form-data` | Upload image to Cloudinary | ✅ JWT |
+### 🛠️ Admin (`/api/admin`)
+| Method | Endpoint | Description |
+|:---|:---|:---|
+| `GET` | `/stats` | View application usage statistics. |
+| `GET` | `/users` | List all registered users. |
+| `PUT` | `/users/{id}/role` | Change a user's role (Admin only). |
+| `PUT` | `/users/{id}` | Update user profile information. |
+| `DELETE`| `/users/{id}` | Delete a user account. |
+| `PUT` | `/users/{id}/password`| Force reset a user's password. |
 
 ---
 
@@ -383,3 +301,5 @@ npm run dev
 
 - All movie data is fetched from a third-party API ([Ophim](https://ophim1.com)). No movie content is stored in this project's database.
 - This is a personal learning project and is not intended for commercial use.
+
+Developed with ❤️ by **TunDuzz** 🚀
